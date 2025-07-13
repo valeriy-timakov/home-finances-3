@@ -1,0 +1,86 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Модель для імітації користувачів
+model User {
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
+  password     String
+  accounts     Account[]
+  transactions Transaction[]
+}
+
+// Рахунки (карткові, готівка, контрагенти)
+model Account {
+  id              Int           @id @default(autoincrement())
+  name            String
+  description     String?
+  user            User          @relation(fields: [userId], references: [id])
+  userId          Int
+  // Зв'язки для транзакцій
+  transactions    Transaction[] @relation("UserAccount")
+  counterpartyFor Transaction[] @relation("CounterpartyAccount")
+
+  @@unique([name, userId]) // Назва рахунку має бути унікальною для користувача
+}
+
+// Категорії витрат
+model Category {
+  id                 Int                @id @default(autoincrement())
+  name               String             @unique
+  productsOrServices ProductOrService[]
+}
+
+enum ProductType {
+  PRODUCT
+  SERVICE
+}
+
+// Окрема таблиця для товарів та послуг
+model ProductOrService {
+  id         Int                 @id @default(autoincrement())
+  type       ProductType
+  name       String
+  unit       String // "шт", "кг", "м", "послуга"
+  category   Category            @relation(fields: [categoryId], references: [id])
+  categoryId Int
+  details    TransactionDetail[]
+
+  @@unique([name, unit])
+}
+
+// Основна сутність - транзакція/витрата
+model Transaction {
+  id             Int                 @id @default(autoincrement())
+  amount         Float // Загальна сума для швидкого доступу
+  date           DateTime
+  name           String
+  description    String?
+  user           User                @relation(fields: [userId], references: [id])
+  userId         Int
+  userAccount    Account             @relation("UserAccount", fields: [userAccountId], references: [id])
+  userAccountId  Int
+  counterparty   Account             @relation("CounterpartyAccount", fields: [counterpartyId], references: [id])
+  counterpartyId Int
+  details        TransactionDetail[]
+}
+
+// Деталізація витрати (елементи чеку)
+model TransactionDetail {
+  id                 Int              @id @default(autoincrement())
+  quantity           Float
+  pricePerUnit       Float
+  transaction        Transaction      @relation(fields: [transactionId], references: [id])
+  transactionId      Int
+  productOrService   ProductOrService @relation(fields: [productOrServiceId], references: [id])
+  productOrServiceId Int
+}
