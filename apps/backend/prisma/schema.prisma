@@ -19,7 +19,6 @@ model User {
   transactions Transaction[]
 }
 
-// Рахунки (карткові, готівка, контрагенти)
 model Account {
   id              Int           @id @default(autoincrement())
   name            String
@@ -45,17 +44,23 @@ enum ProductType {
   SERVICE
 }
 
+model MeasureUnit {
+  id               Int                @id @default(autoincrement())
+  name             String             @unique
+  shortName        String             @unique
+  ProductOrService ProductOrService[]
+}
+
 // Окрема таблиця для товарів та послуг
 model ProductOrService {
   id         Int                 @id @default(autoincrement())
   type       ProductType
   name       String
-  unit       String // "шт", "кг", "м", "послуга"
+  unitId     Int
+  unit       MeasureUnit         @relation(fields: [unitId], references: [id])
   category   Category            @relation(fields: [categoryId], references: [id])
   categoryId Int
   details    TransactionDetail[]
-
-  @@unique([name, unit])
 }
 
 // Основна сутність - транзакція/витрата
