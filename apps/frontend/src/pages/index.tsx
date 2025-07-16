@@ -1,5 +1,6 @@
 import { useSession, signIn, signOut } from "next-auth/react";
 import React, { useState } from "react";
+import Link from "next/link";
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("uk-UA");
@@ -46,6 +47,10 @@ export default function Home() {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Move login form state to the top level
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
 
   const handleLoadExpenses = async () => {
     setLoading(true);
@@ -66,12 +71,72 @@ export default function Home() {
   if (status === "loading") return <div>Завантаження...</div>;
 
   if (!session) {
+
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setLoginError("");
+
+      try {
+        const result = await signIn("credentials", {
+          redirect: false,
+          email,
+          password,
+        });
+
+        if (result?.error) {
+          setLoginError("Невірний email або пароль");
+        }
+      } catch (error) {
+        setLoginError("Помилка при вході. Спробуйте пізніше.");
+      }
+    };
+
     return (
       <div style={{ maxWidth: 320, margin: "64px auto", padding: 24, border: "1px solid #eee", borderRadius: 8 }}>
         <h2 style={{ marginBottom: 16 }}>Вхід</h2>
-        <button onClick={() => signIn()} style={{ width: "100%", padding: 8, fontSize: 16, borderRadius: 4, background: "#222", color: "#fff" }}>
-          Увійти
-        </button>
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", marginBottom: 8 }}>Email</label>
+            <input 
+              type="email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
+              required
+            />
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", marginBottom: 8 }}>Пароль</label>
+            <input 
+              type="password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
+              required
+            />
+          </div>
+
+          {loginError && <div style={{ color: "red", marginBottom: 16 }}>{loginError}</div>}
+
+          <button type="submit" style={{ width: "100%", padding: 8, fontSize: 16, borderRadius: 4, background: "#222", color: "#fff", marginBottom: 16 }}>
+            Увійти
+          </button>
+
+          <div style={{ textAlign: "center", marginBottom: 16 }}>
+            <Link href="/register" style={{ color: "#0070f3", textDecoration: "none" }}>
+              Немає акаунту? Зареєструватися
+            </Link>
+          </div>
+        </form>
+
+        <div style={{ textAlign: "center" }}>
+          <p style={{ marginBottom: 8 }}>Або</p>
+          <button onClick={() => signIn("github")} style={{ width: "100%", padding: 8, fontSize: 16, borderRadius: 4, background: "#24292e", color: "#fff" }}>
+            Увійти через GitHub
+          </button>
+        </div>
       </div>
     );
   }
