@@ -12,9 +12,46 @@ datasource db {
 
 // Модель для імітації користувачів
 model User {
-  id           Int           @id @default(autoincrement())
-  email        String        @unique
-  password     String
+  id            Int           @id @default(autoincrement())
+  username      String        @unique
+  email         String        @unique
+  password      String
+  emailVerified DateTime?
+  accounts      UserAccount[]
+  sessions      Session[]
+  agent         Agent?
+}
+
+model UserAccount {
+  id                String  @id @default(cuid())
+  userId            Int
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Agent {
+  id           Int           @id @map("id")
+  user         User          @relation(fields: [id], references: [id])
   accounts     Account[]
   transactions Transaction[]
 }
@@ -23,13 +60,13 @@ model Account {
   id              Int           @id @default(autoincrement())
   name            String
   description     String?
-  user            User          @relation(fields: [userId], references: [id])
-  userId          Int
+  agent           Agent         @relation(fields: [agentId], references: [id])
+  agentId         Int
   // Зв'язки для транзакцій
   transactions    Transaction[] @relation("UserAccount")
   counterpartyFor Transaction[] @relation("CounterpartyAccount")
 
-  @@unique([name, userId]) // Назва рахунку має бути унікальною для користувача
+  @@unique([name, agentId]) // Назва рахунку має бути унікальною для агента
 }
 
 // Категорії витрат
@@ -70,8 +107,8 @@ model Transaction {
   date           DateTime
   name           String
   description    String?
-  user           User                @relation(fields: [userId], references: [id])
-  userId         Int
+  agent          Agent               @relation(fields: [agentId], references: [id])
+  agentId        Int
   userAccount    Account             @relation("UserAccount", fields: [userAccountId], references: [id])
   userAccountId  Int
   counterparty   Account             @relation("CounterpartyAccount", fields: [counterpartyId], references: [id])
