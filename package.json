@@ -10,7 +10,9 @@
     "prisma:studio": "pnpm --filter backend prisma:studio",
     "dev:backend": "pnpm run prisma:generate && pnpm --filter backend dev",
     "dev:frontend": "pnpm --filter frontend dev",
-    "dev": "pnpm run prisma:generate && pnpm -r --parallel dev"
+    "dev": "pnpm run prisma:generate && pnpm -r --parallel dev",
+    "run:backend": "pnpm --filter backend dev",
+    "run:frontend": "pnpm --filter frontend dev"
   },
   "keywords": [],
   "author": "",
