@@ -11,7 +11,7 @@ import { QueryTransactionDto } from './dto/query-transaction.dto';
 export class TransactionsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createTransactionDto: CreateTransactionDto, userId: number) {
+  async create(createTransactionDto: CreateTransactionDto, agentId: number) {
     const { userAccountId, counterpartyId, details, amount } = createTransactionDto;
 
     // 1. Перевіряємо, чи сума вказана вірно
@@ -21,8 +21,8 @@ export class TransactionsService {
     }
 
     // 2. Перевіряємо, чи рахунки належать користувачу
-    const userAccount = await this.prisma.account.findFirst({ where: { id: userAccountId, userId } });
-    const counterpartyAccount = await this.prisma.account.findFirst({ where: { id: counterpartyId, userId } });
+    const userAccount = await this.prisma.account.findFirst({ where: { id: userAccountId, agentId } });
+    const counterpartyAccount = await this.prisma.account.findFirst({ where: { id: counterpartyId, agentId } });
 
     if (!userAccount || !counterpartyAccount) {
       throw new NotFoundException('One of the accounts not found or does not belong to the user.');
@@ -36,7 +36,7 @@ export class TransactionsService {
           description: createTransactionDto.description,
           amount,
           date: createTransactionDto.date,
-          userId,
+          agentId,
           userAccountId,
           counterpartyId,
         },
@@ -57,7 +57,9 @@ export class TransactionsService {
     const { userAccountId, categoryId, productName, startDate, endDate } = query;
 
     const whereClause: any = {
-      userId,
+      agent: {
+        id: userId,
+      },
     };
 
     if (userAccountId) {

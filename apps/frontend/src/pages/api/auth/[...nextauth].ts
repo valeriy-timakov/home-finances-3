@@ -21,7 +21,9 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
+        console.log('[authorize] called with', credentials);
         if (!credentials?.email || !credentials?.password) {
+          console.log('[authorize] missing credentials');
           return null;
         }
 
@@ -30,15 +32,18 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user) {
+          console.log('[authorize] user not found:', credentials.email);
           return null;
         }
 
         const isPasswordValid = await compare(credentials.password, user.password);
 
         if (!isPasswordValid) {
+          console.log('[authorize] invalid password for:', credentials.email);
           return null;
         }
 
+        console.log('[authorize] success for:', credentials.email);
         return {
           id: user.id.toString(),
           email: user.email
