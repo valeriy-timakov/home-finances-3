@@ -47,8 +47,7 @@ export default function Home() {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Move login form state to the top level
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState(""); // username or email
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
 
@@ -71,72 +70,61 @@ export default function Home() {
   if (status === "loading") return <div>Завантаження...</div>;
 
   if (!session) {
-
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       setLoginError("");
 
       try {
         const result = await signIn("credentials", {
-          redirect: false,
-          email,
+          email: identifier, // поле email використовується і для username, і для email
           password,
+          redirect: false,
         });
-
         if (result?.error) {
-          setLoginError("Невірний email або пароль");
+          setLoginError(result.error);
         }
-      } catch (error) {
-        setLoginError("Помилка при вході. Спробуйте пізніше.");
+      } catch (err: any) {
+        setLoginError(err.message);
       }
     };
 
     return (
-      <div style={{ maxWidth: 320, margin: "64px auto", padding: 24, border: "1px solid #eee", borderRadius: 8 }}>
+      <div style={{ maxWidth: 360, margin: "64px auto", padding: 24, border: "1px solid #eee", borderRadius: 8 }}>
         <h2 style={{ marginBottom: 16 }}>Вхід</h2>
-
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", marginBottom: 8 }}>Email</label>
-            <input 
-              type="email" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
+            <label style={{ display: 'block', marginBottom: 8 }}>Ім'я користувача або Email</label>
+            <input
+              type="text"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              style={{ width: '100%', padding: 8, borderRadius: 4, border: '1px solid #ccc' }}
               required
             />
           </div>
-
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", marginBottom: 8 }}>Пароль</label>
-            <input 
-              type="password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
+            <label style={{ display: 'block', marginBottom: 8 }}>Пароль</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={{ width: '100%', padding: 8, borderRadius: 4, border: '1px solid #ccc' }}
               required
             />
           </div>
-
-          {loginError && <div style={{ color: "red", marginBottom: 16 }}>{loginError}</div>}
-
-          <button type="submit" style={{ width: "100%", padding: 8, fontSize: 16, borderRadius: 4, background: "#222", color: "#fff", marginBottom: 16 }}>
+          {loginError && <div style={{ color: 'red', marginBottom: 16 }}>{loginError}</div>}
+          <button
+            type="submit"
+            style={{ width: '100%', padding: 8, fontSize: 16, borderRadius: 4, background: '#222', color: '#fff', marginBottom: 16 }}
+          >
             Увійти
           </button>
-
-          <div style={{ textAlign: "center", marginBottom: 16 }}>
-            <Link href="/register" style={{ color: "#0070f3", textDecoration: "none" }}>
-              Немає акаунту? Зареєструватися
+          <div style={{ textAlign: 'center' }}>
+            <Link href="/register" style={{ color: '#0070f3', textDecoration: 'none' }}>
+              Зареєструватися
             </Link>
           </div>
         </form>
-
-        <div style={{ textAlign: "center" }}>
-          <p style={{ marginBottom: 8 }}>Або</p>
-          <button onClick={() => signIn("github")} style={{ width: "100%", padding: 8, fontSize: 16, borderRadius: 4, background: "#24292e", color: "#fff" }}>
-            Увійти через GitHub
-          </button>
-        </div>
       </div>
     );
   }

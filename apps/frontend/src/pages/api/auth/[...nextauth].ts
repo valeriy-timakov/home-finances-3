@@ -22,31 +22,40 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         console.log('[authorize] called with', credentials);
-        if (!credentials?.email || !credentials?.password) {
+        const identifier = credentials?.email; // could be username or email
+        const password = credentials?.password;
+        if (!identifier || !password) {
           console.log('[authorize] missing credentials');
           return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
-        });
+        // Try to find by email
+        const userByEmail = await prisma.user.findUnique({ where: { email: identifier } });
+        // Try to find by username
+        const userByUsername = await prisma.user.findUnique({ where: { username: identifier } });
 
+        if (userByEmail && userByUsername && userByEmail.id !== userByUsername.id) {
+          console.log('[authorize] Ambiguous identifier: found different users by email and username');
+          throw new Error('Введене значення співпадає і з email, і з іменем різних користувачів. Уточніть, як саме ви хочете увійти.');
+        }
+
+        const user = userByEmail || userByUsername;
         if (!user) {
-          console.log('[authorize] user not found:', credentials.email);
+          console.log('[authorize] user not found:', identifier);
           return null;
         }
 
-        const isPasswordValid = await compare(credentials.password, user.password);
-
+        const isPasswordValid = await compare(password, user.password);
         if (!isPasswordValid) {
-          console.log('[authorize] invalid password for:', credentials.email);
+          console.log('[authorize] invalid password for:', identifier);
           return null;
         }
 
-        console.log('[authorize] success for:', credentials.email);
+        console.log('[authorize] success for:', identifier);
         return {
           id: user.id.toString(),
-          email: user.email
+          email: user.email,
+          username: user.username,
         };
       }
     }),

@@ -10,20 +10,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { email, password } = req.body;
+    const { email, password, username } = req.body;
 
     // Validate input
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+    if (!email || !password || !username) {
+      return res.status(400).json({ message: 'Email, username and password are required' });
     }
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
+    const existingUser = await prisma.user.findFirst({
+      where: { OR: [{ email }, { username }] },
     });
 
     if (existingUser) {
-      return res.status(400).json({ message: 'User with this email already exists' });
+      return res.status(400).json({ message: 'User with this email or username already exists' });
     }
 
     // Hash password
@@ -34,6 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: {
         email,
         password: hashedPassword,
+        username,
       },
     });
 
@@ -41,6 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(201).json({
       id: user.id,
       email: user.email,
+      username: user.username,
     });
   } catch (error) {
     console.error('Registration error:', error);

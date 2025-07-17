@@ -6,6 +6,7 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -15,6 +16,12 @@ export default function Register() {
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    if (!username) {
+      setError('Імʼя користувача обовʼязкове');
+      setLoading(false);
+      return;
+    }
 
     // Validate passwords match
     if (password !== confirmPassword) {
@@ -29,7 +36,7 @@ export default function Register() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, username }),
       });
 
       const data = await response.json();
@@ -61,6 +68,17 @@ export default function Register() {
         </div>
       ) : (
         <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', marginBottom: 8 }}>Імʼя користувача</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              style={{ width: '100%', padding: 8, borderRadius: 4, border: '1px solid #ccc' }}
+              required
+            />
+          </div>
+
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: 'block', marginBottom: 8 }}>Email</label>
             <input
