@@ -55,7 +55,7 @@ export default function Home() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/transactions");
+      const res = await fetch("/transactions", { credentials: 'include' });
       if (!res.ok) throw new Error("Помилка завантаження");
       const data = await res.json();
       setExpenses(data);
