@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",
+    "dotenv-cli": "^8.0.0",
     "prisma": "^5.22.0"
   }
 }
