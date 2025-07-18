@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "cross-env PORT=$NEXT_PUBLIC_PORT next dev --turbopack",
     "build": "next build",
-    "start": "next start",
+    "start": "cross-env PORT=$NEXT_PUBLIC_PORT next start",
     "lint": "next lint"
   },
   "dependencies": {
@@ -22,6 +22,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^7.0.3",
     "eslint": "^9",
     "eslint-config-next": "15.3.5",
     "tailwindcss": "^4",
