@@ -54,6 +54,7 @@ model Agent {
   user         User          @relation(fields: [id], references: [id])
   accounts     Account[]
   transactions Transaction[]
+  Category     Category[]
 }
 
 model Account {
@@ -74,6 +75,8 @@ model Category {
   id                 Int                @id @default(autoincrement())
   name               String             @unique
   productsOrServices ProductOrService[]
+  agent              Agent              @relation(fields: [agentId], references: [id])
+  agentId            Int
 }
 
 enum ProductType {
