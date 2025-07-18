@@ -27,7 +27,7 @@ function ExpensesTable({ data }: { data: any[] }) {
                 <td rowSpan={tr.details.length}>{formatDate(tr.date)}</td>
               )}
               <td>{d.productOrService?.name}</td>
-              <td>{d.productOrService?.category?.name}</td>
+              <td>{d.productOrService?.category?.categoryPath ?? d.productOrService?.category?.name}</td>
               <td>{(d.quantity * d.pricePerUnit).toLocaleString("uk-UA")}</td>
               <td>{d.pricePerUnit}</td>
               <td>

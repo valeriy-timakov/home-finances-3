@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service'; // Ваш сервіс для роботи з Prisma
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { QueryTransactionDto } from './dto/query-transaction.dto';
+import { CategoryDto, ProductOrServiceDto, TransactionDetailDto, TransactionDto, toCategoryDto, toProductOrServiceDto, toTransactionDetailDto, toTransactionDto } from '../dto/prisma-dto';
 
 @Injectable()
 export class TransactionsService {
@@ -125,20 +126,32 @@ export class TransactionsService {
       .map(detail => detail.productOrService?.category)
       .filter((cat): cat is NonNullable<typeof transactions[0]["details"][0]["productOrService"]["category"]> => !!cat)
       .reduce((acc, cat) => {
-        if (!acc[cat.id]) acc[cat.id] = cat;
+        if (!acc[cat.id]) acc[cat.id] = toCategoryDto(cat);
         return acc;
-      }, {} as Record<number, typeof transactions[0]["details"][0]["productOrService"]["category"]>);
+      }, {} as Record<number, CategoryDto>);
 
     for (const category of Object.values(categoriesMap)) {
-      (category as any).categoryPath = await this.getCategoryPath(category);
+      category.categoryPath = await this.getCategoryPath(category);
+      category.categoryId = category.id;
     }
 
-    for (const tx of transactions) {
-      for (const detail of tx.details) {
-        (detail.productOrService as any).categoryPath = (categoriesMap[detail.productOrService.categoryId] as any).categoryPath;
-      }
-    }
+    // Трансформуємо всі дані у DTO
+    const transactionsDto: TransactionDto[] = transactions.map(tx =>
+      toTransactionDto(
+        tx,
+        tx.details.map(detail =>
+          toTransactionDetailDto(
+            detail,
+            toProductOrServiceDto(
+              detail.productOrService,
+              categoriesMap[detail.productOrService.categoryId]
+            ),
+            categoriesMap[detail.productOrService.categoryId]?.categoryPath
+          )
+        )
+      )
+    );
 
-    return transactions;
+    return transactionsDto;
   }
 }
