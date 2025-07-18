@@ -53,6 +53,15 @@ export class TransactionsService {
     });
   }
 
+  // Рекурсивно будує шлях категорії
+  private async getCategoryPath(category: any): Promise<string> {
+    if (!category) return '';
+    if (!category.superCategoryId) return category.name;
+    const superCategory = await this.prisma.category.findUnique({ where: { id: category.superCategoryId } });
+    const parentPath = await this.getCategoryPath(superCategory);
+    return parentPath ? `${parentPath}/${category.name}` : category.name;
+  }
+
   async findAll(query: QueryTransactionDto, userId: number) {
     const { userAccountId, categoryId, productName, startDate, endDate } = query;
 
@@ -90,9 +99,9 @@ export class TransactionsService {
       }
     }
 
-    return this.prisma.transaction.findMany({
+    const transactions = await this.prisma.transaction.findMany({
       where: whereClause,
-      include: { // Включаємо пов'язані дані для повноти відповіді
+      include: {
         userAccount: true,
         counterparty: true,
         details: {
@@ -109,5 +118,27 @@ export class TransactionsService {
         date: 'desc',
       },
     });
+
+    // Мапа категорій по id
+    const categoriesMap = transactions
+      .flatMap(tx => tx.details)
+      .map(detail => detail.productOrService?.category)
+      .filter((cat): cat is NonNullable<typeof transactions[0]["details"][0]["productOrService"]["category"]> => !!cat)
+      .reduce((acc, cat) => {
+        if (!acc[cat.id]) acc[cat.id] = cat;
+        return acc;
+      }, {} as Record<number, typeof transactions[0]["details"][0]["productOrService"]["category"]>);
+
+    for (const category of Object.values(categoriesMap)) {
+      (category as any).categoryPath = await this.getCategoryPath(category);
+    }
+
+    for (const tx of transactions) {
+      for (const detail of tx.details) {
+        (detail.productOrService as any).categoryPath = (categoriesMap[detail.productOrService.categoryId] as any).categoryPath;
+      }
+    }
+
+    return transactions;
   }
 }
