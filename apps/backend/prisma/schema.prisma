@@ -74,12 +74,12 @@ model Account {
 model Category {
   id                 Int                @id @default(autoincrement())
   name               String             @unique
-  productsOrServices ProductOrService[]
   agent              Agent              @relation(fields: [agentId], references: [id])
   agentId            Int
   superCategoryId    Int?  // нове поле для ієрархії
   superCategory      Category? @relation("CategoryToCategory", fields: [superCategoryId], references: [id])
   subCategories      Category[] @relation("CategoryToCategory")
+  productsOrServices ProductOrService[]
   // Додатковий унікальний індекс для (id, agentId) для складеного ключа
   @@unique([id, agentId])
 }
