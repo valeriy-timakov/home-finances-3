@@ -77,6 +77,11 @@ model Category {
   productsOrServices ProductOrService[]
   agent              Agent              @relation(fields: [agentId], references: [id])
   agentId            Int
+  superCategoryId    Int?  // нове поле для ієрархії
+  superCategory      Category? @relation("CategoryToCategory", fields: [superCategoryId], references: [id])
+  subCategories      Category[] @relation("CategoryToCategory")
+  // Додатковий унікальний індекс для (id, agentId) для складеного ключа
+  @@unique([id, agentId])
 }
 
 enum ProductType {
