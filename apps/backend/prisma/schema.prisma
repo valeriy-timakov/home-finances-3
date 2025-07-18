@@ -76,10 +76,11 @@ model Category {
   name               String             @unique
   agent              Agent              @relation(fields: [agentId], references: [id])
   agentId            Int
-  superCategoryId    Int?  // нове поле для ієрархії
-  superCategory      Category? @relation("CategoryToCategory", fields: [superCategoryId], references: [id])
-  subCategories      Category[] @relation("CategoryToCategory")
+  superCategoryId    Int? // нове поле для ієрархії
+  superCategory      Category?          @relation("CategoryToCategory", fields: [superCategoryId], references: [id])
+  subCategories      Category[]         @relation("CategoryToCategory")
   productsOrServices ProductOrService[]
+
   // Додатковий унікальний індекс для (id, agentId) для складеного ключа
   @@unique([id, agentId])
 }

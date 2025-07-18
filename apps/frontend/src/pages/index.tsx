@@ -1,6 +1,8 @@
 import { useSession, signIn, signOut } from "next-auth/react";
 import React, { useState } from "react";
 import Link from "next/link";
+import { Tree } from 'antd';
+import 'antd/dist/reset.css';
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("uk-UA");
@@ -41,6 +43,38 @@ function ExpensesTable({ data }: { data: any[] }) {
   );
 }
 
+function AccountsTable({ data }: { data: any[] }) {
+  return (
+    <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 24 }}>
+      <thead>
+        <tr>
+          <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left' }}>Найменування рахунку</th>
+          <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left' }}>Опис</th>
+        </tr>
+      </thead>
+      <tbody>
+        {data.map((acc) => (
+          <tr key={acc.id}>
+            <td>{acc.name}</td>
+            <td>{acc.description}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function CategoryTree({ data }: { data: any[] }) {
+  // Преобразуем у формат для Ant Tree
+  const convert = (nodes: any[]): any[] =>
+    nodes.map((n) => ({
+      title: n.name,
+      key: n.id,
+      children: n.children ? convert(n.children) : [],
+    }));
+  return <Tree treeData={convert(data)} defaultExpandAll />;
+}
+
 export default function Home() {
   const { data: session, status } = useSession();
   const [showTable, setShowTable] = useState(false);
@@ -50,6 +84,9 @@ export default function Home() {
   const [identifier, setIdentifier] = useState(""); // username or email
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [view, setView] = useState<'transactions' | 'accounts' | 'categories'>('transactions');
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
 
   const handleLoadExpenses = async () => {
     setLoading(true);
@@ -60,6 +97,38 @@ export default function Home() {
       const data = await res.json();
       setExpenses(data);
       setShowTable(true);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLoadAccounts = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/accounts', { credentials: 'include' });
+      if (!res.ok) throw new Error('Помилка завантаження');
+      const data = await res.json();
+      setAccounts(data);
+      setView('accounts');
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLoadCategories = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/categories', { credentials: 'include' });
+      if (!res.ok) throw new Error('Помилка завантаження');
+      const data = await res.json();
+      setCategories(data);
+      setView('categories');
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -136,11 +205,17 @@ export default function Home() {
           <span style={{ marginRight: 16 }}>Вітаю, {session.user?.email}</span>
           <button onClick={() => signOut()} style={{ border: 0, background: "#eee", padding: "4px 12px", borderRadius: 4 }}>Вийти</button>
         </div>
-        <button onClick={handleLoadExpenses} style={{ padding: "8px 16px", background: "#2d7", color: "#fff", border: 0, borderRadius: 4, fontWeight: 600 }}>Витрати</button>
+        <div style={{ marginBottom: 16 }}>
+          <button onClick={() => { setView('transactions'); handleLoadExpenses(); }} style={{ marginRight: 8 }}>Транзакції</button>
+          <button onClick={handleLoadAccounts} style={{ marginRight: 8 }}>Рахунки</button>
+          <button onClick={handleLoadCategories}>Категорії</button>
+        </div>
       </div>
-      {loading && <div>Завантаження витрат...</div>}
+      {loading && <div>Завантаження...</div>}
       {error && <div style={{ color: "red" }}>{error}</div>}
-      {showTable && <ExpensesTable data={expenses} />}
+      {view === 'transactions' && <ExpensesTable data={expenses} />}
+      {view === 'accounts' && <AccountsTable data={accounts} />}
+      {view === 'categories' && <CategoryTree data={categories} />}
     </div>
   );
 }
