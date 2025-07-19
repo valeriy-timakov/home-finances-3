@@ -18,7 +18,7 @@ export default function AccountsPage() {
 
     if (status === 'authenticated') {
       setLoading(true);
-      fetch('/api/accounts', { credentials: 'include' })
+      fetch('/api/accounts')
         .then(res => {
           if (!res.ok) {
             return Promise.reject('Помилка завантаження рахунків');

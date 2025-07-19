@@ -18,7 +18,7 @@ export default function TransactionsPage() {
 
     if (status === 'authenticated') {
       setLoading(true);
-      fetch('/api/transactions', { credentials: 'include' })
+      fetch('/api/transactions')
         .then(res => {
           if (!res.ok) {
             return Promise.reject('Помилка завантаження транзакцій');

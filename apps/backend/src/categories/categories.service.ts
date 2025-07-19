@@ -6,9 +6,12 @@ import { CategoryDto } from '../dto/category.dto';
 export class CategoriesService {
   constructor(private prisma: PrismaService) {}
 
-  async findAllTree(): Promise<CategoryDto[]> {
+  async findAllTree(agentId: number): Promise<CategoryDto[]> {
     // Отримати всі категорії з agentId (поки без фільтрації)
     const categories = await this.prisma.category.findMany({
+      where: {
+        agentId,
+      },
       select: {
         id: true,
         name: true,

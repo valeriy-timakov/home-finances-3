@@ -18,7 +18,7 @@ export default function CategoriesPage() {
 
     if (status === 'authenticated') {
       setLoading(true);
-      fetch('/api/categories', { credentials: 'include' })
+      fetch('/api/categories')
         .then(res => {
           if (!res.ok) {
             return Promise.reject('Помилка завантаження категорій');

@@ -6,8 +6,11 @@ import { AccountDto } from '../dto/account.dto';
 export class AccountsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(): Promise<AccountDto[]> {
+  async findAll(agentId: number): Promise<AccountDto[]> {
     const accounts = await this.prisma.account.findMany({
+      where: {
+        agentId,
+      },
       select: {
         id: true,
         name: true,
