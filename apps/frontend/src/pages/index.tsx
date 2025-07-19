@@ -75,9 +75,28 @@ function CategoryTree({ data }: { data: any[] }) {
   return <Tree treeData={convert(data)} defaultExpandAll />;
 }
 
+// User SVG Icon component
+function UserIcon({ size = 32 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ display: 'block' }}
+    >
+      <circle cx="16" cy="16" r="16" fill="#E0E7EF" />
+      <circle cx="16" cy="13" r="6" fill="#8AA4C8" />
+      <ellipse cx="16" cy="24" rx="9" ry="5" fill="#B7C7DD" />
+    </svg>
+  );
+}
+
 export default function Home() {
   const { data: session, status } = useSession();
   const [showTable, setShowTable] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -142,7 +161,6 @@ export default function Home() {
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       setLoginError("");
-
       try {
         const result = await signIn("credentials", {
           email: identifier, // поле email використовується і для username, і для email
@@ -198,13 +216,50 @@ export default function Home() {
     );
   }
 
+  const username = session.user?.name || session.user?.email || "Користувач";
+  const handleMenuToggle = () => setMenuOpen((v) => !v);
+  const handleLogout = () => {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || '/';
+    signOut({ callbackUrl: appUrl });
+  };
+
   return (
     <div style={{ maxWidth: 900, margin: "40px auto", padding: 24 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <div>
-          <span style={{ marginRight: 16 }}>Вітаю, {session.user?.email}</span>
-          <button onClick={() => signOut()} style={{ border: 0, background: "#eee", padding: "4px 12px", borderRadius: 4 }}>Вийти</button>
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <button
+          onClick={handleMenuToggle}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 6,
+            boxShadow: menuOpen ? '0 2px 8px rgba(0,0,0,0.12)' : undefined,
+          }}
+          aria-label="User menu"
+        >
+          <UserIcon size={28} />
+          <span style={{ fontWeight: 500 }}>{username}</span>
+        </button>
+        {menuOpen && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 48,
+              left: 0,
+              background: '#fff',
+              border: '1px solid #e0e0e0',
+              borderRadius: 8,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.10)',
+              zIndex: 100,
+              minWidth: 120,
+              padding: 8,
+            }}
+          >
+            <button
+              onClick={handleLogout}
+              style={{ width: '100%', background: 'none', border: 'none', padding: 8, textAlign: 'left', cursor: 'pointer', borderRadius: 4 }}
+            >
+              Вийти
+            </button>
+          </div>
+        )}
         <div style={{ marginBottom: 16 }}>
           <button onClick={() => { setView('transactions'); handleLoadExpenses(); }} style={{ marginRight: 8 }}>Транзакції</button>
           <button onClick={handleLoadAccounts} style={{ marginRight: 8 }}>Рахунки</button>
