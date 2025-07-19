@@ -13,8 +13,8 @@ const nextConfig: NextConfig = {
         console.log(`rewrites to ${apiUrl}`);
         return [
             {
-                source: '/transactions/:path*',
-                destination: `${apiUrl}/transactions/:path*`,
+                source: '/api/:path(transactions|accounts|categories)/:slug*',
+                destination: `${apiUrl}/:path/:slug*`,
             },
         ];
     },
