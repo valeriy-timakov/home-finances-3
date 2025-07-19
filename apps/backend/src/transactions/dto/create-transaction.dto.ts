@@ -16,7 +16,7 @@ class TransactionDetailDto {
 
 export class CreateTransactionDto {
   @IsInt()
-  userAccountId: number;
+  accountId: number;
 
   @IsInt()
   counterpartyId: number;

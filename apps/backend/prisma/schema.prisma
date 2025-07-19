@@ -50,24 +50,45 @@ model Session {
 }
 
 model Agent {
-  id           Int           @id @map("id")
-  user         User          @relation(fields: [id], references: [id])
-  accounts     Account[]
-  transactions Transaction[]
-  Category     Category[]
+  id                 Int                 @id @map("id")
+  user               User                @relation(fields: [id], references: [id])
+  accounts           Account[]
+  categories         Category[]
+  transactions       Transaction[]
+  productsOrServices ProductOrService[]
+  transactionDetails TransactionDetail[]
+}
+
+model Currency {
+  id         Int       @id @default(autoincrement())
+  name       String
+  code       String
+  symbol     String
+  local_code String
+  accounts   Account[]
+}
+
+enum AccountType {
+  OWN
+  COUNTERPARTY
 }
 
 model Account {
   id              Int           @id @default(autoincrement())
   name            String
+  type            AccountType
   description     String?
+  currency        Currency      @relation(fields: [currencyId], references: [id])
+  currencyId      Int
   agent           Agent         @relation(fields: [agentId], references: [id])
   agentId         Int
   // Зв'язки для транзакцій
-  transactions    Transaction[] @relation("UserAccount")
+  transactions    Transaction[] @relation("Account")
   counterpartyFor Transaction[] @relation("CounterpartyAccount")
 
   @@unique([name, agentId]) // Назва рахунку має бути унікальною для агента
+  // Додатковий унікальний індекс для (id, agentId) для складеного ключа
+  @@unique([id, agentId])
 }
 
 // Категорії витрат
@@ -85,28 +106,42 @@ model Category {
   @@unique([id, agentId])
 }
 
-enum ProductType {
-  PRODUCT
-  SERVICE
+model MeasureUnit {
+  id                  Int                @id @default(autoincrement())
+  name                String             @unique
+  shortName           String             @unique
+  local_code          String
+  productsAsMainUnit  ProductOrService[] @relation("measureUnit")
+  productsAsPieceUnit ProductOrService[] @relation("pieceSizeMeasureUnit")
 }
 
-model MeasureUnit {
-  id               Int                @id @default(autoincrement())
-  name             String             @unique
-  shortName        String             @unique
-  ProductOrService ProductOrService[]
+enum ProductOrServiceType {
+  SERVICE
+  PRODUCT
+  PIECE_PRODUCT
+  WEIGHT_PRODUCT
 }
 
 // Окрема таблиця для товарів та послуг
 model ProductOrService {
-  id         Int                 @id @default(autoincrement())
-  type       ProductType
-  name       String
-  unitId     Int
-  unit       MeasureUnit         @relation(fields: [unitId], references: [id])
-  category   Category            @relation(fields: [categoryId], references: [id])
-  categoryId Int
-  details    TransactionDetail[]
+  id                 Int                  @id @default(autoincrement())
+  type               ProductOrServiceType
+  name               String
+  description        String
+  manufacturer       String
+  agent              Agent                @relation(fields: [agentId], references: [id])
+  agentId            Int
+  unitId             Int
+  unit               MeasureUnit          @relation("measureUnit", fields: [unitId], references: [id])
+  category           Category             @relation(fields: [categoryId, agentId], references: [id, agentId])
+  categoryId         Int
+  pieceSize          Float?
+  pieceSizeUnitId    Int?
+  pieceSizeUnit      MeasureUnit?         @relation("pieceSizeMeasureUnit", fields: [pieceSizeUnitId], references: [id])
+  transactionDetails TransactionDetail[]
+
+  // Додатковий унікальний індекс для (id, agentId) для складеного ключа
+  @@unique([id, agentId])
 }
 
 // Основна сутність - транзакція/витрата
@@ -118,11 +153,14 @@ model Transaction {
   description    String?
   agent          Agent               @relation(fields: [agentId], references: [id])
   agentId        Int
-  userAccount    Account             @relation("UserAccount", fields: [userAccountId], references: [id])
-  userAccountId  Int
-  counterparty   Account             @relation("CounterpartyAccount", fields: [counterpartyId], references: [id])
+  account        Account             @relation("Account", fields: [accountId, agentId], references: [id, agentId])
+  accountId      Int
+  counterparty   Account             @relation("CounterpartyAccount", fields: [counterpartyId, agentId], references: [id, agentId])
   counterpartyId Int
   details        TransactionDetail[]
+
+  // Додатковий унікальний індекс для (id, agentId) для складеного ключа
+  @@unique([id, agentId])
 }
 
 // Деталізація витрати (елементи чеку)
@@ -130,8 +168,10 @@ model TransactionDetail {
   id                 Int              @id @default(autoincrement())
   quantity           Float
   pricePerUnit       Float
-  transaction        Transaction      @relation(fields: [transactionId], references: [id])
+  agent              Agent            @relation(fields: [agentId], references: [id])
+  agentId            Int
+  transaction        Transaction      @relation(fields: [transactionId, agentId], references: [id, agentId])
   transactionId      Int
-  productOrService   ProductOrService @relation(fields: [productOrServiceId], references: [id])
+  productOrService   ProductOrService @relation(fields: [productOrServiceId, agentId], references: [id, agentId])
   productOrServiceId Int
 }

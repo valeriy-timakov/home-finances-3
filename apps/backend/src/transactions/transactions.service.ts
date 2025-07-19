@@ -13,7 +13,7 @@ export class TransactionsService {
   constructor(private prisma: PrismaService) {}
 
   async create(createTransactionDto: CreateTransactionDto, agentId: number) {
-    const { userAccountId, counterpartyId, details, amount } = createTransactionDto;
+    const { accountId, counterpartyId, details, amount } = createTransactionDto;
 
     // 1. Перевіряємо, чи сума вказана вірно
     const calculatedAmount = details.reduce((sum, item) => sum + item.quantity * item.pricePerUnit, 0);
@@ -22,7 +22,7 @@ export class TransactionsService {
     }
 
     // 2. Перевіряємо, чи рахунки належать користувачу
-    const userAccount = await this.prisma.account.findFirst({ where: { id: userAccountId, agentId } });
+    const userAccount = await this.prisma.account.findFirst({ where: { id: accountId, agentId } });
     const counterpartyAccount = await this.prisma.account.findFirst({ where: { id: counterpartyId, agentId } });
 
     if (!userAccount || !counterpartyAccount) {
@@ -38,7 +38,7 @@ export class TransactionsService {
           amount,
           date: createTransactionDto.date,
           agentId,
-          userAccountId,
+          accountId,
           counterpartyId,
         },
       });
@@ -47,6 +47,7 @@ export class TransactionsService {
         data: details.map((detail) => ({
           ...detail,
           transactionId: transaction.id,
+          agentId,
         })),
       });
 
@@ -58,22 +59,20 @@ export class TransactionsService {
   private async getCategoryPath(category: any): Promise<string> {
     if (!category) return '';
     if (!category.superCategoryId) return category.name;
-    const superCategory = await this.prisma.category.findUnique({ where: { id: category.superCategoryId } });
+    const superCategory = await this.prisma.category.findUnique({ where: { id: category.superCategoryId, agentId: category.agentId } });
     const parentPath = await this.getCategoryPath(superCategory);
     return parentPath ? `${parentPath}/${category.name}` : category.name;
   }
 
-  async findAll(query: QueryTransactionDto, userId: number) {
-    const { userAccountId, categoryId, productName, startDate, endDate } = query;
+  async findAll(query: QueryTransactionDto, agentId: number) {
+    const { accountId, categoryId, productName, startDate, endDate } = query;
 
     const whereClause: any = {
-      agent: {
-        id: userId,
-      },
+      agentId,
     };
 
-    if (userAccountId) {
-      whereClause.userAccountId = userAccountId;
+    if (accountId) {
+      whereClause.accountId = accountId;
     }
 
     if (startDate || endDate) {
@@ -103,7 +102,7 @@ export class TransactionsService {
     const transactions = await this.prisma.transaction.findMany({
       where: whereClause,
       include: {
-        userAccount: true,
+        account: true,
         counterparty: true,
         details: {
           include: {
@@ -126,24 +125,24 @@ export class TransactionsService {
       .map(detail => detail.productOrService?.category)
       .filter((cat): cat is NonNullable<typeof transactions[0]["details"][0]["productOrService"]["category"]> => !!cat)
       .reduce((acc, cat) => {
-        if (!acc[cat.id]) acc[cat.id] = toCategoryDto(cat);
+        if (!acc[cat.id]) acc[cat.id] = toCategoryDto(cat as any);
         return acc;
       }, {} as Record<number, CategoryDto>);
 
     for (const category of Object.values(categoriesMap)) {
-      category.categoryPath = await this.getCategoryPath(category);
+      category.categoryPath = await this.getCategoryPath({ ...category, agentId });
       category.categoryId = category.id;
     }
 
     // Трансформуємо всі дані у DTO
     const transactionsDto: TransactionDto[] = transactions.map(tx =>
       toTransactionDto(
-        tx,
+        tx as any,
         tx.details.map(detail =>
           toTransactionDetailDto(
-            detail,
+            detail as any,
             toProductOrServiceDto(
-              detail.productOrService,
+              detail.productOrService as any,
               categoriesMap[detail.productOrService.categoryId]
             ),
             categoriesMap[detail.productOrService.categoryId]?.categoryPath

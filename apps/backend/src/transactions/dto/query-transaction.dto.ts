@@ -5,7 +5,7 @@ export class QueryTransactionDto {
   @IsOptional()
   @IsInt()
   @Type(() => Number)
-  userAccountId?: number;
+  accountId?: number;
 
   @IsOptional()
   @IsInt()
