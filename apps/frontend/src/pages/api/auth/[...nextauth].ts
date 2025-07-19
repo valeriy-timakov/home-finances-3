@@ -77,7 +77,11 @@ export const authOptions: NextAuthOptions = {
         session.user.name = token.username as string;
       }
       return session;
-    }
+    },
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith(baseUrl)) return url;
+      return process.env.NEXT_PUBLIC_APP_URL || baseUrl;
+    },
   },
   pages: {
     signIn: '/',
