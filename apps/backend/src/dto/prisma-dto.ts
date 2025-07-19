@@ -1,5 +1,5 @@
 // DTOs for all Prisma models (transient fields allowed)
-import { Category, ProductOrService, Transaction, TransactionDetail, Account, Agent, MeasureUnit, User, UserAccount, Session } from '@prisma/client';
+import { Category, ProductOrService, Transaction, TransactionDetail, Account, Agent, MeasureUnit, User } from '@prisma/client';
 
 export interface CategoryDto extends Category {
   categoryPath?: string;
@@ -23,8 +23,6 @@ export interface AccountDto extends Account {}
 export interface AgentDto extends Agent {}
 export interface MeasureUnitDto extends MeasureUnit {}
 export interface UserDto extends User {}
-export interface UserAccountDto extends UserAccount {}
-export interface SessionDto extends Session {}
 
 // Маппери для перетворення об'єктів Prisma у DTO
 export function toCategoryDto(category: Category): CategoryDto {

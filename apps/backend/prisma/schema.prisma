@@ -12,41 +12,12 @@ datasource db {
 
 // Модель для імітації користувачів
 model User {
-  id            Int           @id @default(autoincrement())
-  username      String        @unique
-  email         String        @unique
+  id            Int       @id @default(autoincrement())
+  username      String    @unique
+  email         String    @unique
   password      String
   emailVerified DateTime?
-  accounts      UserAccount[]
-  sessions      Session[]
   agent         Agent?
-}
-
-model UserAccount {
-  id                String  @id @default(cuid())
-  userId            Int
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       Int
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Agent {
@@ -117,7 +88,6 @@ model MeasureUnit {
 
 enum ProductOrServiceType {
   SERVICE
-  PRODUCT
   PIECE_PRODUCT
   WEIGHT_PRODUCT
 }
@@ -127,14 +97,14 @@ model ProductOrService {
   id                 Int                  @id @default(autoincrement())
   type               ProductOrServiceType
   name               String
-  description        String
-  manufacturer       String
+  description        String?
+  manufacturer       String?
   agent              Agent                @relation(fields: [agentId], references: [id])
   agentId            Int
-  unitId             Int
-  unit               MeasureUnit          @relation("measureUnit", fields: [unitId], references: [id])
-  category           Category             @relation(fields: [categoryId, agentId], references: [id, agentId])
-  categoryId         Int
+  unitId             Int?
+  unit               MeasureUnit?         @relation("measureUnit", fields: [unitId], references: [id])
+  category           Category?            @relation(fields: [categoryId, agentId], references: [id, agentId])
+  categoryId         Int?
   pieceSize          Float?
   pieceSizeUnitId    Int?
   pieceSizeUnit      MeasureUnit?         @relation("pieceSizeMeasureUnit", fields: [pieceSizeUnitId], references: [id])
@@ -155,8 +125,8 @@ model Transaction {
   agentId        Int
   account        Account             @relation("Account", fields: [accountId, agentId], references: [id, agentId])
   accountId      Int
-  counterparty   Account             @relation("CounterpartyAccount", fields: [counterpartyId, agentId], references: [id, agentId])
-  counterpartyId Int
+  counterparty   Account?            @relation("CounterpartyAccount", fields: [counterpartyId, agentId], references: [id, agentId])
+  counterpartyId Int?
   details        TransactionDetail[]
 
   // Додатковий унікальний індекс для (id, agentId) для складеного ключа
@@ -166,7 +136,7 @@ model Transaction {
 // Деталізація витрати (елементи чеку)
 model TransactionDetail {
   id                 Int              @id @default(autoincrement())
-  quantity           Float
+  quantity           Float?
   pricePerUnit       Float
   agent              Agent            @relation(fields: [agentId], references: [id])
   agentId            Int

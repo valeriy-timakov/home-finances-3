@@ -4,11 +4,22 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
 import { compare } from "bcryptjs";
+import Redis from "ioredis";
+import { randomUUID } from "crypto";
 
 const prisma = new PrismaClient();
+const redis = new Redis(process.env.REDIS_URL!, {
+  password: process.env.REDIS_PASSWORD,
+});
+
+const sessionMaxAge = 30 * 24 * 60 * 60; // 30 днів
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
+  session: {
+    strategy: "jwt", // Повертаємося до JWT, але будемо використовувати його лише для передачі sessionToken
+    maxAge: sessionMaxAge,
+  },
   providers: [
     GitHubProvider({
       clientId: process.env.GITHUB_ID!,
@@ -21,20 +32,16 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        const identifier = credentials?.email; // could be username or email
+        const identifier = credentials?.email;
         const password = credentials?.password;
         if (!identifier || !password) {
           return null;
         }
 
-        const userByEmail = await prisma.user.findUnique({ where: { email: identifier } });
-        const userByUsername = await prisma.user.findUnique({ where: { username: identifier } });
+        const user = await prisma.user.findFirst({
+          where: { OR: [{ email: identifier }, { username: identifier }] },
+        });
 
-        if (userByEmail && userByUsername && userByEmail.id !== userByUsername.id) {
-          throw new Error('Введене значення співпадає і з email, і з іменем різних користувачів. Уточніть, як саме ви хочете увійти.');
-        }
-
-        const user = userByEmail || userByUsername;
         if (!user) {
           return null;
         }
@@ -52,21 +59,31 @@ export const authOptions: NextAuthOptions = {
       }
     }),
   ],
-  session: {
-    strategy: "jwt",
-  },
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
+    async jwt({ token, user, trigger }) {
+      if (trigger === "signIn" && user) {
+        const sessionToken = randomUUID();
+        const expires = new Date(Date.now() + sessionMaxAge * 1000);
+
+        const sessionData = {
+          sessionToken,
+          userId: user.id,
+          expires,
+        };
+
+        await redis.setex(sessionToken, sessionMaxAge, JSON.stringify(sessionData));
+
+        token.sessionToken = sessionToken;
         token.id = user.id;
         token.username = user.username;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
+      if (session.user && token.sessionToken) {
         session.user.id = token.id as string;
         session.user.name = token.username as string;
+        (session as any).sessionToken = token.sessionToken;
       }
       return session;
     },

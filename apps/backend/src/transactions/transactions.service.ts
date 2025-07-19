@@ -138,16 +138,18 @@ export class TransactionsService {
     const transactionsDto: TransactionDto[] = transactions.map(tx =>
       toTransactionDto(
         tx as any,
-        tx.details.map(detail =>
-          toTransactionDetailDto(
+        tx.details.map(detail => {
+          const categoryId = detail.productOrService.categoryId;
+          const category = categoryId ? categoriesMap[categoryId] : undefined;
+          return toTransactionDetailDto(
             detail as any,
             toProductOrServiceDto(
               detail.productOrService as any,
-              categoriesMap[detail.productOrService.categoryId]
+              category
             ),
-            categoriesMap[detail.productOrService.categoryId]?.categoryPath
-          )
-        )
+            category?.categoryPath
+          );
+        })
       )
     );
 
