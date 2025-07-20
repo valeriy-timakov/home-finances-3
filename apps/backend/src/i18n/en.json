@@ -1,0 +1,8 @@
+{
+  "errors": {
+    "invalid_session": "Invalid session token",
+    "invalid_session_data": "Session data is invalid",
+    "invalid_user_id": "User ID in session is not a valid number",
+    "user_not_found": "User not found"
+  }
+}

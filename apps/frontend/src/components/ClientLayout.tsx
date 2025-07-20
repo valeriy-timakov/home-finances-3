@@ -3,6 +3,7 @@
 import React, { ReactNode, useState } from 'react';
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 
 function UserIcon({ size = 28 }: { size?: number }) {
   return (
@@ -15,18 +16,19 @@ function UserIcon({ size = 28 }: { size?: number }) {
 }
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
+  const t = useTranslations('ClientLayout');
   const { data: session, status } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
 
   if (status === 'loading') {
-    return <div>Завантаження...</div>;
+    return <div>{t('loading')}</div>;
   }
 
   if (!session) {
     return <main style={{ maxWidth: 900, margin: '40px auto', padding: 24 }}>{children}</main>;
   }
 
-  const username = session?.user?.name || session?.user?.email || 'Користувач';
+  const username = session?.user?.name || session?.user?.email || t('defaultUsername');
 
   return (
     <div>
@@ -36,9 +38,9 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
         position: 'sticky', top: 0, zIndex: 100
       }}>
         <nav style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-          <Link href="/transactions" style={{ fontWeight: 500, color: '#222', textDecoration: 'none' }}>Транзакції</Link>
-          <Link href="/accounts" style={{ fontWeight: 500, color: '#222', textDecoration: 'none' }}>Рахунки</Link>
-          <Link href="/categories" style={{ fontWeight: 500, color: '#222', textDecoration: 'none' }}>Категорії</Link>
+          <Link href="/transactions" style={{ fontWeight: 500, color: '#222', textDecoration: 'none' }}>{t('transactionsLink')}</Link>
+          <Link href="/accounts" style={{ fontWeight: 500, color: '#222', textDecoration: 'none' }}>{t('accountsLink')}</Link>
+          <Link href="/categories" style={{ fontWeight: 500, color: '#222', textDecoration: 'none' }}>{t('categoriesLink')}</Link>
         </nav>
         <div style={{ position: 'relative' }}>
           <button
@@ -58,7 +60,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
                 onClick={() => signOut({ callbackUrl: '/' })}
                 style={{ width: '100%', background: 'none', border: 'none', padding: 8, textAlign: 'left', cursor: 'pointer', borderRadius: 4 }}
               >
-                Вийти
+                {t('signOutButton')}
               </button>
             </div>
           )}

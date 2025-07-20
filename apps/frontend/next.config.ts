@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import withNextIntl from 'next-intl/plugin';
 
 // console.log("=== process.env variables in next.config.ts ===");
 // for (const [key, value] of Object.entries(process.env)) {
@@ -21,4 +22,6 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+const withIntl = withNextIntl('./src/i18n.ts');
+
+export default withIntl(nextConfig);

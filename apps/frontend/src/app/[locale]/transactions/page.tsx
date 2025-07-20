@@ -3,36 +3,38 @@
 import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
-import AccountsTable from '../../components/AccountsTable';
+import ExpensesTable from '../../../components/ExpensesTable';
+import {useTranslations} from 'next-intl';
 
-export default function AccountsPage() {
+export default function TransactionsPage() {
+  const t = useTranslations('TransactionsPage');
   const { data: session, status } = useSession();
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      redirect('/');
+      redirect(`/${params.locale}`);
     }
 
     if (status === 'authenticated') {
       setLoading(true);
-      fetch('/api/accounts')
+      fetch('/api/transactions')
         .then(res => {
           if (!res.ok) {
-            return Promise.reject('Помилка завантаження рахунків');
+            return Promise.reject(t('loadingError'));
           }
           return res.json();
         })
-        .then(setAccounts)
-        .catch(e => setError(e.message || 'Сталася помилка'))
+        .then(setExpenses)
+        .catch(e => setError(e.message || t('errorOccurred')))
         .finally(() => setLoading(false));
     }
-  }, [status]);
+  }, [status, t]);
 
   if (status === 'loading' || loading) {
-    return <div>Завантаження...</div>;
+    return <div>{t('loading')}</div>;
   }
 
   if (!session) {
@@ -41,9 +43,9 @@ export default function AccountsPage() {
 
   return (
     <div>
-      <h2>Рахунки</h2>
+      <h2>{t('title')}</h2>
       {error && <div style={{ color: 'red' }}>{error}</div>}
-      <AccountsTable data={accounts} />
+      <ExpensesTable data={expenses} />
     </div>
   );
 }

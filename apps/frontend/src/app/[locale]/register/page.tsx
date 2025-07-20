@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import {useTranslations} from 'next-intl';
 
 export default function Register() {
+  const t = useTranslations('RegisterPage');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -20,13 +22,13 @@ export default function Register() {
     setLoading(true);
 
     if (!username) {
-      setError('Імʼя користувача обовʼязкове');
+      setError(t('usernameRequiredError'));
       setLoading(false);
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Паролі не співпадають');
+      setError(t('passwordsDoNotMatchError'));
       setLoading(false);
       return;
     }
@@ -43,7 +45,7 @@ export default function Register() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Помилка при реєстрації');
+        throw new Error(data.message || t('registrationError'));
       }
 
       setSuccess(true);
@@ -60,16 +62,16 @@ export default function Register() {
 
   return (
     <div style={{ maxWidth: 320, margin: '64px auto', padding: 24, border: '1px solid #eee', borderRadius: 8 }}>
-      <h2 style={{ marginBottom: 16 }}>Реєстрація</h2>
+      <h2 style={{ marginBottom: 16 }}>{t('title')}</h2>
 
       {success ? (
         <div style={{ color: 'green', marginBottom: 16 }}>
-          Реєстрація успішна! Перенаправлення на сторінку входу...
+          {t('successMessage')}
         </div>
       ) : (
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 8 }}>Імʼя користувача</label>
+            <label style={{ display: 'block', marginBottom: 8 }}>{t('usernameLabel')}</label>
             <input
               type="text"
               value={username}
@@ -80,7 +82,7 @@ export default function Register() {
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 8 }}>Email</label>
+            <label style={{ display: 'block', marginBottom: 8 }}>{t('emailLabel')}</label>
             <input
               type="email"
               value={email}
@@ -91,7 +93,7 @@ export default function Register() {
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 8 }}>Пароль</label>
+            <label style={{ display: 'block', marginBottom: 8 }}>{t('passwordLabel')}</label>
             <input
               type="password"
               value={password}
@@ -102,7 +104,7 @@ export default function Register() {
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 8 }}>Підтвердження паролю</label>
+            <label style={{ display: 'block', marginBottom: 8 }}>{t('confirmPasswordLabel')}</label>
             <input
               type="password"
               value={confirmPassword}
@@ -128,12 +130,12 @@ export default function Register() {
               opacity: loading ? 0.7 : 1,
             }}
           >
-            {loading ? 'Реєстрація...' : 'Зареєструватися'}
+            {loading ? t('registeringButton') : t('registerButton')}
           </button>
 
           <div style={{ textAlign: 'center' }}>
             <Link href="/" style={{ color: '#0070f3', textDecoration: 'none' }}>
-              Вже маєте акаунт? Увійти
+              {t('loginLink')}
             </Link>
           </div>
         </form>

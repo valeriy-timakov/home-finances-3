@@ -1,14 +1,16 @@
-import Providers from '../components/Providers';
 import { ReactNode } from 'react';
-import ClientLayout from "../components/ClientLayout";
+import Providers from '../components/Providers';
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+interface Props {
+  children: ReactNode;
+}
+
+// Root layout – wraps the whole app once.
+export default function RootLayout({ children }: Props) {
   return (
     <html lang="uk">
       <body>
-        <Providers>
-          <ClientLayout>{children}</ClientLayout>
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

@@ -1,0 +1,66 @@
+{
+  "IndexPage": {
+    "title": "Домашня Бухгалтерія"
+  },
+  "CategoriesPage": {
+    "title": "Категорії",
+    "loadingError": "Помилка завантаження категорій",
+    "errorOccurred": "Сталася помилка",
+    "loading": "Завантаження..."
+  },
+  "LoginPage": {
+    "loading": "Завантаження...",
+    "title": "Вхід",
+    "usernameOrEmailLabel": "Ім'я користувача або Email",
+    "passwordLabel": "Пароль",
+    "loginError": "Невірний логін або пароль",
+    "signInButton": "Увійти",
+    "registerLink": "Зареєструватися"
+  },
+  "RegisterPage": {
+    "title": "Реєстрація",
+    "successMessage": "Реєстрація успішна! Перенаправлення на сторінку входу...",
+    "usernameLabel": "Імʼя користувача",
+    "usernameRequiredError": "Імʼя користувача обовʼязкове",
+    "emailLabel": "Email",
+    "passwordLabel": "Пароль",
+    "confirmPasswordLabel": "Підтвердження паролю",
+    "passwordsDoNotMatchError": "Паролі не співпадають",
+    "registrationError": "Помилка при реєстрації",
+    "registerButton": "Зареєструватися",
+    "registeringButton": "Реєстрація...",
+    "loginLink": "Вже маєте акаунт? Увійти"
+  },
+  "AccountsPage": {
+    "title": "Рахунки",
+    "loadingError": "Помилка завантаження рахунків",
+    "errorOccurred": "Сталася помилка",
+    "loading": "Завантаження..."
+  },
+  "TransactionsPage": {
+    "title": "Транзакції",
+    "loadingError": "Помилка завантаження транзакцій",
+    "errorOccurred": "Сталася помилка",
+    "loading": "Завантаження..."
+  },
+  "AccountsTable": {
+    "accountName": "Найменування рахунку",
+    "description": "Опис"
+  },
+  "ClientLayout": {
+    "loading": "Завантаження...",
+    "defaultUsername": "Користувач",
+    "transactionsLink": "Транзакції",
+    "accountsLink": "Рахунки",
+    "categoriesLink": "Категорії",
+    "signOutButton": "Вийти"
+  },
+  "ExpensesTable": {
+    "date": "Дата операції",
+    "productService": "Назва продукту/послуги",
+    "category": "Категорія",
+    "expenses": "Витрати",
+    "price": "Ціна",
+    "quantity": "Кількість"
+  }
+}

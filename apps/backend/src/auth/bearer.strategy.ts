@@ -4,6 +4,7 @@ import { Strategy } from 'passport-http-bearer';
 import Redis from 'ioredis';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
+import { I18nService } from 'nestjs-i18n';
 
 @Injectable()
 export class BearerStrategy extends PassportStrategy(Strategy, 'bearer') {
@@ -12,6 +13,7 @@ export class BearerStrategy extends PassportStrategy(Strategy, 'bearer') {
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
+    private readonly i18n: I18nService,
   ) {
     super();
     this.redis = new Redis(this.configService.get<string>('REDIS_URL')!,
@@ -23,19 +25,19 @@ export class BearerStrategy extends PassportStrategy(Strategy, 'bearer') {
   async validate(token: string): Promise<any> {
     const sessionJson = await this.redis.get(token);
     if (!sessionJson) {
-      throw new UnauthorizedException('Invalid session token');
+      throw new UnauthorizedException(await this.i18n.t('errors.invalid_session'));
     }
 
     const sessionData = JSON.parse(sessionJson);
     const userIdString = sessionData.userId;
 
     if (!userIdString) {
-      throw new UnauthorizedException('Session data is invalid');
+      throw new UnauthorizedException(await this.i18n.t('errors.invalid_session_data'));
     }
 
     const userId = parseInt(userIdString, 10);
     if (isNaN(userId)) {
-      throw new UnauthorizedException('User ID in session is not a valid number');
+      throw new UnauthorizedException(await this.i18n.t('errors.invalid_user_id'));
     }
 
     const user = await this.prisma.user.findUnique({
@@ -45,7 +47,7 @@ export class BearerStrategy extends PassportStrategy(Strategy, 'bearer') {
     });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException(await this.i18n.t('errors.user_not_found'));
     }
 
     // Припускаємо, що поле `agentId` існує в моделі User

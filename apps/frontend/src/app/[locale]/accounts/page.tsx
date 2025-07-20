@@ -3,11 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
-import CategoryTree from '../../components/CategoryTree';
+import AccountsTable from '../../../components/AccountsTable';
+import {useTranslations} from 'next-intl';
 
-export default function CategoriesPage() {
+export default function AccountsPage() {
+  const t = useTranslations('AccountsPage');
   const { data: session, status } = useSession();
-  const [categories, setCategories] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,21 +20,21 @@ export default function CategoriesPage() {
 
     if (status === 'authenticated') {
       setLoading(true);
-      fetch('/api/categories')
+      fetch('/api/accounts')
         .then(res => {
           if (!res.ok) {
-            return Promise.reject('Помилка завантаження категорій');
+            return Promise.reject(t('loadingError'));
           }
           return res.json();
         })
-        .then(setCategories)
-        .catch(e => setError(e.message || 'Сталася помилка'))
+        .then(setAccounts)
+        .catch(e => setError(e.message || t('errorOccurred')))
         .finally(() => setLoading(false));
     }
-  }, [status]);
+  }, [status, t]);
 
   if (status === 'loading' || loading) {
-    return <div>Завантаження...</div>;
+    return <div>{t('loading')}</div>;
   }
 
   if (!session) {
@@ -41,9 +43,9 @@ export default function CategoriesPage() {
 
   return (
     <div>
-      <h2>Категорії</h2>
+      <h2>{t('title')}</h2>
       {error && <div style={{ color: 'red' }}>{error}</div>}
-      <CategoryTree data={categories} />
+      <AccountsTable data={accounts} />
     </div>
   );
 }

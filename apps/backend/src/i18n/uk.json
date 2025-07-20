@@ -1,0 +1,8 @@
+{
+  "errors": {
+    "invalid_session": "Недійсний токен сесії",
+    "invalid_session_data": "Дані сесії недійсні",
+    "invalid_user_id": "ID користувача в сесії не є дійсним числом",
+    "user_not_found": "Користувача не знайдено"
+  }
+}

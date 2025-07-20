@@ -1,0 +1,66 @@
+{
+  "IndexPage": {
+    "title": "Home Accounting"
+  },
+  "CategoriesPage": {
+    "title": "Categories",
+    "loadingError": "Error loading categories",
+    "errorOccurred": "An error occurred",
+    "loading": "Loading..."
+  },
+  "LoginPage": {
+    "loading": "Loading...",
+    "title": "Sign In",
+    "usernameOrEmailLabel": "Username or Email",
+    "passwordLabel": "Password",
+    "loginError": "Invalid login or password",
+    "signInButton": "Sign In",
+    "registerLink": "Register"
+  },
+  "RegisterPage": {
+    "title": "Register",
+    "successMessage": "Registration successful! Redirecting to login...",
+    "usernameLabel": "Username",
+    "usernameRequiredError": "Username is required",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "confirmPasswordLabel": "Confirm Password",
+    "passwordsDoNotMatchError": "Passwords do not match",
+    "registrationError": "Error during registration",
+    "registerButton": "Register",
+    "registeringButton": "Registering...",
+    "loginLink": "Already have an account? Sign In"
+  },
+  "AccountsPage": {
+    "title": "Accounts",
+    "loadingError": "Error loading accounts",
+    "errorOccurred": "An error occurred",
+    "loading": "Loading..."
+  },
+  "TransactionsPage": {
+    "title": "Transactions",
+    "loadingError": "Error loading transactions",
+    "errorOccurred": "An error occurred",
+    "loading": "Loading..."
+  },
+  "AccountsTable": {
+    "accountName": "Account Name",
+    "description": "Description"
+  },
+  "ClientLayout": {
+    "loading": "Loading...",
+    "defaultUsername": "User",
+    "transactionsLink": "Transactions",
+    "accountsLink": "Accounts",
+    "categoriesLink": "Categories",
+    "signOutButton": "Sign Out"
+  },
+  "ExpensesTable": {
+    "date": "Date",
+    "productService": "Product/Service",
+    "category": "Category",
+    "expenses": "Expenses",
+    "price": "Price",
+    "quantity": "Quantity"
+  }
+}
