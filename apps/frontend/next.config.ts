@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import withNextIntl from 'next-intl/plugin';
+import { locales, defaultLocale } from './src/i18n';
 
 // console.log("=== process.env variables in next.config.ts ===");
 // for (const [key, value] of Object.entries(process.env)) {
@@ -22,6 +23,11 @@ const nextConfig: NextConfig = {
   },
 };
 
-const withIntl = withNextIntl('./src/i18n.ts');
+// @ts-expect-error – plugin type defs allow only 1 arg but runtime supports 2
+const withIntl = withNextIntl('./src/i18n.ts', {
+  localePrefix: 'always',      // синхронізуємо з middleware
+  locales,
+  defaultLocale
+});
 
 export default withIntl(nextConfig);

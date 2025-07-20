@@ -7,10 +7,8 @@ const intlMiddleware = createMiddleware({
   locales: ['en', 'uk'],
   // Used when no locale matches
   defaultLocale: 'uk',
-  // Always use a locale prefix
   localePrefix: 'always',
-  // Додаткові налаштування, які можуть допомогти
-  localeDetection: false,
+  localeDetection: true,
 });
 
 // Обгортаємо middleware для логування

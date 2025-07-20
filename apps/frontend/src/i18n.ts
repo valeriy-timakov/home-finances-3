@@ -2,19 +2,19 @@ import {notFound} from 'next/navigation';
 import {getRequestConfig} from 'next-intl/server';
 
 // Can be imported from a shared config
-const locales = ['en', 'uk'];
+export const locales = ['en', 'uk'] as const;
+export const defaultLocale = 'uk';
 
 export default getRequestConfig(async ({locale}) => {
-  console.log('getRequestConfig locale:', locale);
+  console.log('getRequestConfig param locale:', locale);
+  const resolvedLocale = (locale ?? defaultLocale) as (typeof locales)[number];
+  console.log('getRequestConfig locale:', resolvedLocale);
 
-  // Fallback to default locale when not provided or invalid
-  if (!locale || !locales.includes(locale as any)) {
-    console.warn('Unknown or missing locale, falling back to uk');
-    locale = 'uk' as any;
-  }
+  // Validate locale
+  if (!locales.includes(resolvedLocale as any)) notFound();
 
   return {
-    messages: (await import(`../messages/${locale}.json`)).default,
-    locale
+    locale: resolvedLocale,
+    messages: (await import(`../messages/${resolvedLocale}.json`)).default
   };
 });

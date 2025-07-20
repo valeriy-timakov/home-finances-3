@@ -8,14 +8,14 @@ interface Props {
   params: {locale: string};
 }
 
-export default async function LocaleLayout({children, params}: Props) {
+export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params;
   console.log('Layout locale param:', locale);
   setRequestLocale(locale);
-  const messages = await getMessages();
+  const messages = await getMessages({locale});
 
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
+    <NextIntlClientProvider key={locale} locale={locale} messages={messages}>
       <ClientLayout>{children}</ClientLayout>
     </NextIntlClientProvider>
   );
