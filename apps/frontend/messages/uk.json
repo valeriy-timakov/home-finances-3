@@ -62,5 +62,8 @@
     "expenses": "Витрати",
     "price": "Ціна",
     "quantity": "Кількість"
+  },
+  "LocaleSwitcher": {
+    "changeLocale": "Змінити мову"
   }
 }
