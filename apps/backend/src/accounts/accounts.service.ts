@@ -11,16 +11,25 @@ export class AccountsService {
       where: {
         agentId,
       },
-      select: {
-        id: true,
-        name: true,
-        description: true,
+      include: {
+        currency: true,
       },
     });
-    // Fix: convert null to undefined
-    return accounts.map(acc => ({
-      ...acc,
-      description: acc.description ?? undefined,
+
+    return accounts.map(account => ({
+      id: account.id,
+      name: account.name,
+      type: account.type as 'OWN' | 'COUNTERPARTY',
+      description: account.description ?? undefined,
+      agentId: account.agentId,
+      currency: {
+        id: account.currency.id,
+        name: account.currency.name,
+        code: account.currency.code,
+        symbol: account.currency.symbol,
+        fractionalPartName: account.currency.fractionalPartName,
+        partFraction: account.currency.partFraction,
+      },
     }));
   }
 }

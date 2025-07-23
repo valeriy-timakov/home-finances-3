@@ -102,8 +102,16 @@ export class TransactionsService {
     const transactions = await this.prisma.transaction.findMany({
       where: whereClause,
       include: {
-        account: true,
-        counterparty: true,
+        account: {
+          include: {
+            currency: true,
+          },
+        },
+        counterparty: {
+          include: {
+            currency: true,
+          },
+        },
         details: {
           include: {
             productOrService: {
@@ -135,23 +143,35 @@ export class TransactionsService {
     }
 
     // Трансформуємо всі дані у DTO
-    const transactionsDto: TransactionDto[] = transactions.map(tx =>
-      toTransactionDto(
-        tx as any,
-        tx.details.map(detail => {
-          const categoryId = detail.productOrService.categoryId;
-          const category = categoryId ? categoriesMap[categoryId] : undefined;
-          return toTransactionDetailDto(
-            detail as any,
-            toProductOrServiceDto(
-              detail.productOrService as any,
-              category
-            ),
-            category?.categoryPath
-          );
-        })
-      )
-    );
+    const transactionsDto: TransactionDto[] = [];
+    
+    for (const tx of transactions) {
+      // Map details with categories
+      const details = tx.details.map(detail => {
+        const categoryId = detail.productOrService.categoryId;
+        const category = categoryId ? categoriesMap[categoryId] : undefined;
+        return toTransactionDetailDto(
+          detail as any,
+          toProductOrServiceDto(
+            detail.productOrService as any,
+            category
+          ),
+          category?.categoryPath
+        );
+      });
+      
+      // Create transaction DTO with all required fields
+      const transactionDto = toTransactionDto(
+        {
+          ...tx,
+          account: tx.account,
+          counterparty: tx.counterparty,
+        } as any,
+        details
+      );
+      
+      transactionsDto.push(transactionDto);
+    }
 
     return transactionsDto;
   }

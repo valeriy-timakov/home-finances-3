@@ -1,11 +1,26 @@
 import React from 'react';
-import {useLocale, useTranslations} from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { TransactionDto } from '../types/transactions';
 
 function formatDate(dateStr: string, locale: string) {
   return new Date(dateStr).toLocaleDateString(locale);
 }
 
-export default function ExpensesTable({ data }: { data: any[] }) {
+function formatCurrency(amount: number, currency: { symbol: string, partFraction: number } | undefined, locale: string): string {
+  if (!currency) {
+    console.error('Currency is undefined:', currency);
+    return `${amount.toLocaleString(locale)}`;
+  }
+  
+  // Convert from smallest unit (e.g., cents) to main unit (e.g., dollars)
+  const mainAmount = amount / currency.partFraction;
+  return `${currency.symbol}${mainAmount.toLocaleString(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`;
+}
+
+export default function ExpensesTable({ data }: { data: TransactionDto[] }) {
   const t = useTranslations('ExpensesTable');
   const locale = useLocale();
 
@@ -30,8 +45,16 @@ export default function ExpensesTable({ data }: { data: any[] }) {
               )}
               <td>{d.productOrService?.name}</td>
               <td>{d.productOrService?.category?.categoryPath ?? d.productOrService?.category?.name}</td>
-              <td>{(d.quantity * d.pricePerUnit).toLocaleString(locale)}</td>
-              <td>{d.pricePerUnit}</td>
+              <td>
+                {formatCurrency(
+                  d.quantity * d.pricePerUnit,
+                  tr.account.currency,
+                  locale
+                )}
+              </td>
+              <td>
+                {formatCurrency(d.pricePerUnit, tr.account.currency, locale)}
+              </td>
               <td>
                 {d.quantity} {d.productOrService?.unit?.shortName || ""}
               </td>
