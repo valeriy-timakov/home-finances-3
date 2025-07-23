@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import ExpensesTable from '../../../components/ExpensesTable';
-import {useTranslations} from 'next-intl';
+import {useLocale, useTranslations} from 'next-intl';
 
 export default function TransactionsPage() {
   const t = useTranslations('TransactionsPage');
@@ -12,10 +12,11 @@ export default function TransactionsPage() {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const locale = useLocale();
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      redirect(`/${params.locale}`);
+      redirect(`/${locale}`);
     }
 
     if (status === 'authenticated') {

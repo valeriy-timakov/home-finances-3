@@ -36,7 +36,7 @@ model Currency {
   name               String
   code               String
   symbol             String
-  fractionalParnName String
+  fractionalPartName String
   partFraction       Int
   accounts           Account[]
 }

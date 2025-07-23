@@ -80,10 +80,29 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (session.user && token.sessionToken) {
-        session.user.id = token.id as string;
-        session.user.name = token.username as string;
-        (session as any).sessionToken = token.sessionToken;
+      if (session.user) {
+        // Verify user exists in database
+        const prisma = new PrismaClient();
+        try {
+          const user = await prisma.user.findUnique({
+            where: { id: parseInt(token.sub as string) },
+            select: { id: true, username: true, email: true }
+          });
+
+          if (!user) {
+            return null; // Return null if user doesn't exist
+          }
+
+          session.user.id = token.sub as string;
+          session.user.name = token.username as string;
+          session.user.email = token.email as string;
+          (session as any).sessionToken = token.sessionToken;
+        } catch (error) {
+          console.error('Error verifying user in session:', error);
+          return null; // Return null on error
+        } finally {
+          await prisma.$disconnect();
+        }
       }
       return session;
     },
