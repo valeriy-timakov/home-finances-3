@@ -21,22 +21,24 @@ model User {
 }
 
 model Agent {
-  id                 Int                 @id @map("id")
-  user               User                @relation(fields: [id], references: [id])
+  id                 Int                     @id @map("id")
+  user               User                    @relation(fields: [id], references: [id])
   accounts           Account[]
   categories         Category[]
   transactions       Transaction[]
   productsOrServices ProductOrService[]
   transactionDetails TransactionDetail[]
+  balances           AccountBalanceHistory[]
 }
 
 model Currency {
-  id         Int       @id @default(autoincrement())
-  name       String
-  code       String
-  symbol     String
-  local_code String
-  accounts   Account[]
+  id                 Int       @id @default(autoincrement())
+  name               String
+  code               String
+  symbol             String
+  fractionalParnName String
+  partFraction       Int
+  accounts           Account[]
 }
 
 enum AccountType {
@@ -45,21 +47,32 @@ enum AccountType {
 }
 
 model Account {
-  id              Int           @id @default(autoincrement())
+  id              Int                     @id @default(autoincrement())
   name            String
   type            AccountType
   description     String?
-  currency        Currency      @relation(fields: [currencyId], references: [id])
+  currency        Currency                @relation(fields: [currencyId], references: [id])
   currencyId      Int
-  agent           Agent         @relation(fields: [agentId], references: [id])
+  agent           Agent                   @relation(fields: [agentId], references: [id])
   agentId         Int
   // Зв'язки для транзакцій
-  transactions    Transaction[] @relation("Account")
-  counterpartyFor Transaction[] @relation("CounterpartyAccount")
+  transactions    Transaction[]           @relation("Account")
+  counterpartyFor Transaction[]           @relation("CounterpartyAccount")
+  balances        AccountBalanceHistory[]
 
   @@unique([name, agentId]) // Назва рахунку має бути унікальною для агента
   // Додатковий унікальний індекс для (id, agentId) для складеного ключа
   @@unique([id, agentId])
+}
+
+model AccountBalanceHistory {
+  id        Int      @id @default(autoincrement())
+  account   Account  @relation(fields: [accountId, agentId], references: [id, agentId])
+  accountId Int
+  agent     Agent    @relation(fields: [agentId], references: [id])
+  agentId   Int
+  amount    Int
+  date      DateTime
 }
 
 // Категорії витрат
@@ -88,8 +101,7 @@ model MeasureUnit {
 
 enum ProductOrServiceType {
   SERVICE
-  PIECE_PRODUCT
-  WEIGHT_PRODUCT
+  PRODUCT
 }
 
 // Окрема таблиця для товарів та послуг
@@ -114,10 +126,11 @@ model ProductOrService {
   @@unique([id, agentId])
 }
 
-// Основна сутність - транзакція/витрата
+// Основна сутність - транзакція/витратаn
+
 model Transaction {
   id             Int                 @id @default(autoincrement())
-  amount         Float // Загальна сума для швидкого доступу
+  amount         Int //сума в сотих одиницях
   date           DateTime
   name           String
   description    String?
@@ -137,7 +150,7 @@ model Transaction {
 model TransactionDetail {
   id                 Int              @id @default(autoincrement())
   quantity           Float?
-  pricePerUnit       Float
+  pricePerUnit       Int
   agent              Agent            @relation(fields: [agentId], references: [id])
   agentId            Int
   transaction        Transaction      @relation(fields: [transactionId, agentId], references: [id, agentId])
