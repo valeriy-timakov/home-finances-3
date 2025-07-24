@@ -129,18 +129,21 @@ model ProductOrService {
 // Основна сутність - транзакція/витратаn
 
 model Transaction {
-  id             Int                 @id @default(autoincrement())
-  amount         Int //сума в сотих одиницях
-  date           DateTime
-  name           String
-  description    String?
-  agent          Agent               @relation(fields: [agentId], references: [id])
-  agentId        Int
-  account        Account             @relation("Account", fields: [accountId, agentId], references: [id, agentId])
-  accountId      Int
-  counterparty   Account?            @relation("CounterpartyAccount", fields: [counterpartyId, agentId], references: [id, agentId])
-  counterpartyId Int?
-  details        TransactionDetail[]
+  id                          Int                 @id @default(autoincrement())
+  amount                      Int //сума в сотих одиницях
+  date                        DateTime
+  name                        String
+  description                 String?
+  agent                       Agent               @relation(fields: [agentId], references: [id])
+  agentId                     Int
+  account                     Account             @relation("Account", fields: [accountId, agentId], references: [id, agentId])
+  accountId                   Int
+  counterparty                Account?            @relation("CounterpartyAccount", fields: [counterpartyId, agentId], references: [id, agentId])
+  counterpartyId              Int?
+  details                     TransactionDetail[]
+  transferLinkedTransaction   Transaction?        @relation("TransferPair", fields: [transferLinkedTransactionId], references: [id])
+  transferLinkedTransactionId Int?                @unique // робимо унікальним для забезпечення зв'язку 1:1
+  transferReversedTransaction Transaction?        @relation("TransferPair")
 
   // Додатковий унікальний індекс для (id, agentId) для складеного ключа
   @@unique([id, agentId])
