@@ -65,5 +65,11 @@
   },
   "LocaleSwitcher": {
     "changeLocale": "Change language"
+  },
+  "ThemeSwitcher": {
+    "switchTheme": "Switch theme",
+    "lightTheme": "Light theme",
+    "darkTheme": "Dark theme",
+    "systemTheme": "System theme"
   }
 }

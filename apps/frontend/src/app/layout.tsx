@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import Providers from '../components/Providers';
+import '../styles/globals.css';
 
 interface Props {
   children: ReactNode;

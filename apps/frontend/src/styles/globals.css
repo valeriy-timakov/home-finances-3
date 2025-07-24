@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Основні кольори */
+  --color-primary: #3b82f6;
+  --color-primary-light: #60a5fa;
+  --color-primary-dark: #2563eb;
+  --color-secondary: #10b981;
+  
+  /* Фони */
+  --bg-main: #ffffff;
+  --bg-paper: #f7fafd;
+  
+  /* Текст */
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  
+  /* Границі */
+  --border: #e0e0e0;
+  
+  /* Статуси */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+}
+
+.dark {
+  /* Основні кольори */
+  --color-primary: #60a5fa;
+  --color-primary-light: #93c5fd;
+  --color-primary-dark: #3b82f6;
+  --color-secondary: #34d399;
+  
+  /* Фони */
+  --bg-main: #111827;
+  --bg-paper: #1f2937;
+  
+  /* Текст */
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  
+  /* Границі */
+  --border: #374151;
+  
+  /* Статуси */
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-error: #f87171;
+}
+
+/* Додаткові глобальні стилі */
+@layer base {
+  body {
+    @apply bg-main text-primary;
+  }
+}
+
+/* Компонентні стилі */
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-md font-medium transition-colors;
+  }
+  
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary-dark;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary text-white hover:opacity-90;
+  }
+  
+  .card {
+    @apply bg-paper p-4 rounded-lg shadow-sm border border-border;
+  }
+  
+  .table-container {
+    @apply w-full overflow-x-auto;
+  }
+  
+  .table {
+    @apply w-full border-collapse;
+  }
+  
+  .table th {
+    @apply border-b border py-3 px-4 text-left font-medium text-secondary;
+  }
+  
+  .table td {
+    @apply py-3 px-4 border-b border;
+  }
+}

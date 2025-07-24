@@ -65,5 +65,11 @@
   },
   "LocaleSwitcher": {
     "changeLocale": "Змінити мову"
+  },
+  "ThemeSwitcher": {
+    "switchTheme": "Змінити тему",
+    "lightTheme": "Світла тема",
+    "darkTheme": "Темна тема",
+    "systemTheme": "Системна тема"
   }
 }
