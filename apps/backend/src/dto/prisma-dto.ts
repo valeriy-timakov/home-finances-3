@@ -18,6 +18,8 @@ export interface CategoryDto extends Category {
 
 export interface ProductOrServiceDto extends ProductOrService {
   category?: CategoryDto;
+  unit?: MeasureUnitDto;
+  pieceSizeUnit?: MeasureUnitDto;
 }
 
 export class TransactionDetailDto {
@@ -67,7 +69,21 @@ export interface AccountDto extends Account {
 }
 
 export interface AgentDto extends Agent {}
-export interface MeasureUnitDto extends MeasureUnit {}
+
+export class MeasureUnitDto {
+  @ApiProperty({ description: 'The unique identifier of the measurement unit' })
+  id: number;
+
+  @ApiProperty({ description: 'The full name of the measurement unit' })
+  name: string;
+
+  @ApiProperty({ description: 'The abbreviated name of the measurement unit' })
+  shortName: string;
+
+  @ApiProperty({ description: 'The local code of the measurement unit' })
+  local_code: string;
+}
+
 export interface UserDto extends User {}
 
 // Маппери для перетворення об'єктів Prisma у DTO
@@ -75,8 +91,28 @@ export function toCategoryDto(category: Category): CategoryDto {
   return { ...category };
 }
 
-export function toProductOrServiceDto(pos: ProductOrService, category?: CategoryDto): ProductOrServiceDto {
-  return { ...pos, category };
+export function toMeasureUnitDto(unit: MeasureUnit): MeasureUnitDto {
+  const dto = new MeasureUnitDto();
+  dto.id = unit.id;
+  dto.name = unit.name;
+  dto.shortName = unit.shortName;
+  dto.local_code = unit.local_code;
+  return dto;
+}
+
+export function toProductOrServiceDto(
+  pos: ProductOrService & { 
+    category?: Category;
+    unit?: MeasureUnit;
+    pieceSizeUnit?: MeasureUnit;
+  }
+): ProductOrServiceDto {
+  return { 
+    ...pos, 
+    category: pos.category ? toCategoryDto(pos.category) : undefined,
+    unit: pos.unit ? toMeasureUnitDto(pos.unit) : undefined,
+    pieceSizeUnit: pos.pieceSizeUnit ? toMeasureUnitDto(pos.pieceSizeUnit) : undefined
+  };
 }
 
 export function toTransactionDetailDto(detail: TransactionDetail, productOrService?: ProductOrServiceDto, categoryPath?: string): TransactionDetailDto {

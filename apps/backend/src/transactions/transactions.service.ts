@@ -117,6 +117,8 @@ export class TransactionsService {
             productOrService: {
               include: {
                 category: true,
+                unit: true,
+                pieceSizeUnit: true,
               },
             },
           },
@@ -152,10 +154,12 @@ export class TransactionsService {
         const category = categoryId ? categoriesMap[categoryId] : undefined;
         return toTransactionDetailDto(
           detail as any,
-          toProductOrServiceDto(
-            detail.productOrService as any,
-            category
-          ),
+          toProductOrServiceDto({
+            ...detail.productOrService as any,
+            category: category,
+            unit: detail.productOrService.unit,
+            pieceSizeUnit: detail.productOrService.pieceSizeUnit
+          }),
           category?.categoryPath
         );
       });

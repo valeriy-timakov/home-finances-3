@@ -9,15 +9,15 @@ function formatDate(dateStr: string, locale: string) {
 function formatCurrency(amount: number, currency: { symbol: string, partFraction: number } | undefined, locale: string): string {
   if (!currency) {
     console.error('Currency is undefined:', currency);
-    return `${amount.toLocaleString(locale)}`;
+    return `[?${amount.toLocaleString(locale)}?]`;
   }
   
   // Convert from smallest unit (e.g., cents) to main unit (e.g., dollars)
   const mainAmount = amount / currency.partFraction;
-  return `${currency.symbol}${mainAmount.toLocaleString(locale, {
+  return `${mainAmount.toLocaleString(locale, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
-  })}`;
+  })}${currency.symbol}`;
 }
 
 export default function ExpensesTable({ data }: { data: TransactionDto[] }) {
