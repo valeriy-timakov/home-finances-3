@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { TransactionDto } from '../types/transactions';
 
@@ -20,52 +20,255 @@ function formatCurrency(amount: number, currency: { symbol: string, partFraction
   })}${currency.symbol}`;
 }
 
+type FilterState = {
+  dateFrom: string;
+  dateTo: string;
+  searchText: string;
+  category: string;
+  account: string;
+  counterparty: string;
+};
+
 export default function ExpensesTable({ data }: { data: TransactionDto[] }) {
   const t = useTranslations('ExpensesTable');
   const locale = useLocale();
+  
+  // Filter state
+  const [filters, setFilters] = useState<FilterState>({
+    dateFrom: '',
+    dateTo: '',
+    searchText: '',
+    category: '',
+    account: '',
+    counterparty: '',
+  });
+  
+  // Extract unique values for filter dropdowns
+  const uniqueCategories = useMemo(() => {
+    const categories = new Set<string>();
+    data.forEach(transaction => {
+      transaction.details?.forEach(detail => {
+        const category = detail.productOrService?.category?.name;
+        if (category) categories.add(category);
+      });
+    });
+    return Array.from(categories).sort();
+  }, [data]);
+  
+  const uniqueAccounts = useMemo(() => {
+    const accounts = new Set<string>();
+    data.forEach(transaction => {
+      accounts.add(transaction.account.name);
+    });
+    return Array.from(accounts).sort();
+  }, [data]);
+  
+  const uniqueCounterparties = useMemo(() => {
+    const counterparties = new Set<string>();
+    data.forEach(transaction => {
+      counterparties.add(transaction.counterparty.name);
+    });
+    return Array.from(counterparties).sort();
+  }, [data]);
+  
+  // Handle filter changes
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({ ...prev, [name]: value }));
+  };
+  
+  // Apply filters to data
+  const filteredData = useMemo(() => {
+    return data.filter(transaction => {
+      // Date filter
+      const transactionDate = new Date(transaction.date);
+      if (filters.dateFrom && new Date(filters.dateFrom) > transactionDate) {
+        return false;
+      }
+      if (filters.dateTo && new Date(filters.dateTo) < transactionDate) {
+        return false;
+      }
+      
+      // Account filter
+      if (filters.account && transaction.account.name !== filters.account) {
+        return false;
+      }
+      
+      // Counterparty filter
+      if (filters.counterparty && transaction.counterparty.name !== filters.counterparty) {
+        return false;
+      }
+      
+      // Text search in transaction name
+      if (filters.searchText && !transaction.name.toLowerCase().includes(filters.searchText.toLowerCase())) {
+        return false;
+      }
+      
+      // Category filter - keep transaction if any detail has the selected category
+      if (filters.category) {
+        const hasCategory = transaction.details?.some(
+          detail => detail.productOrService?.category?.name === filters.category
+        );
+        if (!hasCategory) return false;
+      }
+      
+      return true;
+    });
+  }, [data, filters]);
 
   return (
-    <div className="overflow-x-auto w-full">
-      <table className="w-full border-collapse mt-6">
-        <thead>
-          <tr>
-            <th className="border-b border-border py-3 px-4 text-left font-medium text-secondary">{t('date')}</th>
-            <th className="border-b border-border py-3 px-4 text-left font-medium text-secondary">{t('productService')}</th>
-            <th className="border-b border-border py-3 px-4 text-left font-medium text-secondary">{t('category')}</th>
-            <th className="border-b border-border py-3 px-4 text-left font-medium text-secondary">{t('expenses')}</th>
-            <th className="border-b border-border py-3 px-4 text-left font-medium text-secondary">{t('price')}</th>
-            <th className="border-b border-border py-3 px-4 text-left font-medium text-secondary">{t('quantity')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((tr: any) =>
-            tr.details.map((d: any, idx: number) => (
-              <tr key={tr.id + "-" + d.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                {idx === 0 && (
-                  <td rowSpan={tr.details.length} className="py-3 px-4 border-b border-border">
-                    {formatDate(tr.date, locale)}
+    <div className="w-full">
+      {/* Filter controls */}
+      <div className="bg-white dark:bg-gray-900 p-4 rounded-lg shadow mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('dateRange')}</label>
+          <div className="flex gap-2">
+            <input
+              type="date"
+              name="dateFrom"
+              value={filters.dateFrom}
+              onChange={handleFilterChange}
+              className="border rounded px-2 py-1 text-sm w-full"
+              placeholder={t('from')}
+            />
+            <input
+              type="date"
+              name="dateTo"
+              value={filters.dateTo}
+              onChange={handleFilterChange}
+              className="border rounded px-2 py-1 text-sm w-full"
+              placeholder={t('to')}
+            />
+          </div>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('transactionName')}</label>
+          <input
+            type="text"
+            name="searchText"
+            value={filters.searchText}
+            onChange={handleFilterChange}
+            className="border rounded px-2 py-1 text-sm w-full"
+            placeholder={t('searchPlaceholder')}
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('category')}</label>
+          <select
+            name="category"
+            value={filters.category}
+            onChange={handleFilterChange}
+            className="border rounded px-2 py-1 text-sm w-full"
+          >
+            <option value="">{t('all')}</option>
+            {uniqueCategories.map(category => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('account')}</label>
+          <select
+            name="account"
+            value={filters.account}
+            onChange={handleFilterChange}
+            className="border rounded px-2 py-1 text-sm w-full"
+          >
+            <option value="">{t('all')}</option>
+            {uniqueAccounts.map(account => (
+              <option key={account} value={account}>
+                {account}
+              </option>
+            ))}
+          </select>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('counterparty')}</label>
+          <select
+            name="counterparty"
+            value={filters.counterparty}
+            onChange={handleFilterChange}
+            className="border rounded px-2 py-1 text-sm w-full"
+          >
+            <option value="">{t('all')}</option>
+            {uniqueCounterparties.map(counterparty => (
+              <option key={counterparty} value={counterparty}>
+                {counterparty}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      
+      {/* Table */}
+      <div className="overflow-x-auto w-full">
+        <table className="w-full border-collapse mt-6">
+          <thead>
+            <tr>
+              <th className="border-b border-border py-3 px-4 text-left font-medium text-secondary">{t('date')}</th>
+              <th className="border-b border-border py-3 px-4 text-left font-medium text-secondary">{t('product')}</th>
+              <th className="border-b border-border py-3 px-4 text-left font-medium text-secondary">{t('category')}</th>
+              <th className="border-b border-border py-3 px-4 text-left font-medium text-secondary">{t('quantity')}</th>
+              <th className="border-b border-border py-3 px-4 text-left font-medium text-secondary">{t('price')}</th>
+              <th className="border-b border-border py-3 px-4 text-left font-medium text-secondary">{t('amount')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredData.map((transaction: TransactionDto) => (
+              <React.Fragment key={transaction.id}>
+                {/* Transaction row */}
+                <tr className="bg-gray-50 dark:bg-gray-800">
+                  <td className="py-3 px-4 border-b border-border font-medium">
+                    {formatDate(transaction.date, locale)}
                   </td>
-                )}
-                <td className="py-3 px-4 border-b border-border">{d.productOrService?.name}</td>
-                <td className="py-3 px-4 border-b border-border">{d.productOrService?.category?.categoryPath ?? d.productOrService?.category?.name}</td>
-                <td className="py-3 px-4 border-b border-border">
-                  {formatCurrency(
-                    d.quantity * d.pricePerUnit,
-                    tr.account.currency,
-                    locale
-                  )}
-                </td>
-                <td className="py-3 px-4 border-b border-border">
-                  {formatCurrency(d.pricePerUnit, tr.account.currency, locale)}
-                </td>
-                <td className="py-3 px-4 border-b border-border">
-                  {d.quantity} {d.productOrService?.unit?.shortName || ""}
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+                  <td className="py-3 px-4 border-b border-border font-medium" colSpan={4}>
+                    <div className="flex gap-2">
+                      <span>{transaction.name}</span>
+                      <span className="text-gray-500">|</span>
+                      <span>{transaction.account.name}</span>
+                      <span className="text-gray-500">|</span>
+                      <span>{transaction.counterparty.name}</span>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 border-b border-border font-medium">
+                    {formatCurrency(transaction.amount, transaction.account.currency, locale)}
+                  </td>
+                </tr>
+                
+                {/* Detail rows */}
+                {transaction.details?.map((detail, idx) => (
+                  <tr key={`${transaction.id}-detail-${detail.id}`} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <td className="py-3 px-4 border-b border-border">
+                      {/* Empty cell for indentation */}
+                    </td>
+                    <td className="py-3 px-4 border-b border-border">
+                      {detail.productOrService?.name}
+                    </td>
+                    <td className="py-3 px-4 border-b border-border">
+                      {detail.productOrService?.category?.categoryPath ?? detail.productOrService?.category?.name}
+                    </td>
+                    <td className="py-3 px-4 border-b border-border">
+                      {detail.quantity} {detail.productOrService?.unit?.shortName || ""}
+                    </td>
+                    <td className="py-3 px-4 border-b border-border">
+                      {formatCurrency(detail.pricePerUnit, transaction.account.currency, locale)}
+                    </td>
+                    <td className="py-3 px-4 border-b border-border">
+                      {formatCurrency(detail.quantity * detail.pricePerUnit, transaction.account.currency, locale)}
+                    </td>
+                  </tr>
+                ))}
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

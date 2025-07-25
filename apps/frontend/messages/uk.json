@@ -61,7 +61,20 @@
     "category": "Категорія",
     "expenses": "Витрати",
     "price": "Ціна",
-    "quantity": "Кількість"
+    "quantity": "Кількість",
+    "info": "Інформація про транзакцію",
+    "product": "Продукт",
+    "amount": "Сума",
+    "dateRange": "Діапазон дат",
+    "from": "Від",
+    "to": "До",
+    "productName": "Назва продукту",
+    "transactionName": "Назва транзакції",
+    "search": "Пошук",
+    "searchPlaceholder": "Пошук за назвою транзакції",
+    "account": "Рахунок",
+    "counterparty": "Контрагент",
+    "all": "Всі"
   },
   "LocaleSwitcher": {
     "changeLocale": "Змінити мову"

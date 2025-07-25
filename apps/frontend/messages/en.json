@@ -61,7 +61,20 @@
     "category": "Category",
     "expenses": "Expenses",
     "price": "Price",
-    "quantity": "Quantity"
+    "quantity": "Quantity",
+    "info": "Transaction Info",
+    "product": "Product",
+    "amount": "Amount",
+    "dateRange": "Date Range",
+    "from": "From",
+    "to": "To",
+    "productName": "Product name",
+    "transactionName": "Transaction name",
+    "search": "Search",
+    "searchPlaceholder": "Search by transaction name",
+    "account": "Account",
+    "counterparty": "Counterparty",
+    "all": "All"
   },
   "LocaleSwitcher": {
     "changeLocale": "Change language"
