@@ -34,22 +34,12 @@ type ExpensesTableProps = {
   data: TransactionDto[];
   onFilterChange?: (filters: FilterState) => void;
   loading?: boolean;
+  currentFilters: FilterState;
 };
 
-export default function ExpensesTable({ data, onFilterChange, loading = false }: ExpensesTableProps) {
+export default function ExpensesTable({ data, onFilterChange, loading = false, currentFilters }: ExpensesTableProps) {
   const t = useTranslations('ExpensesTable');
   const locale = useLocale();
-  
-  // Filter state
-  const [filters, setFilters] = useState<FilterState>({
-    dateFrom: '',
-    dateTo: '',
-    searchText: '',
-    category: [],
-    account: '',
-    counterparty: '',
-    productName: [],
-  });
   
   // Extract unique values for filter dropdowns
   const uniqueCategories = useMemo(() => {
@@ -79,7 +69,7 @@ export default function ExpensesTable({ data, onFilterChange, loading = false }:
     return Array.from(counterparties).sort();
   }, [data]);
   
-  const uniqueProducts = useMemo(() => {
+  const uniqueProductNames = useMemo(() => {
     const products = new Set<string>();
     data.forEach(transaction => {
       transaction.details?.forEach(detail => {
@@ -100,12 +90,10 @@ export default function ExpensesTable({ data, onFilterChange, loading = false }:
     if (name === 'category' || name === 'productName') {
       const select = e.target as HTMLSelectElement;
       const selectedOptions = Array.from(select.selectedOptions).map(option => option.value);
-      updatedFilters = { ...filters, [name]: selectedOptions };
+      updatedFilters = { ...currentFilters, [name]: selectedOptions };
     } else {
-      updatedFilters = { ...filters, [name]: value };
+      updatedFilters = { ...currentFilters, [name]: value };
     }
-    
-    setFilters(updatedFilters);
     
     if (onFilterChange) {
       onFilterChange(updatedFilters);
@@ -122,109 +110,132 @@ export default function ExpensesTable({ data, onFilterChange, loading = false }:
   return (
     <div className="w-full">
       {/* Filter controls */}
-      <div className="bg-white dark:bg-gray-900 p-4 rounded-lg shadow mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Date filters */}
         <div>
-          <label className="block text-sm font-medium mb-1">{t('dateRange')}</label>
-          <div className="flex gap-2">
-            <input
-              type="date"
-              name="dateFrom"
-              value={filters.dateFrom}
-              onChange={handleFilterChange}
-              className="border rounded px-2 py-1 text-sm w-full"
-              placeholder={t('from')}
-            />
-            <input
-              type="date"
-              name="dateTo"
-              value={filters.dateTo}
-              onChange={handleFilterChange}
-              className="border rounded px-2 py-1 text-sm w-full"
-              placeholder={t('to')}
-            />
-          </div>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium mb-1">{t('transactionName')}</label>
+          <label htmlFor="dateFrom" className="block text-sm font-medium text-gray-700">
+            {t('dateFrom')}
+          </label>
           <input
-            type="text"
-            name="searchText"
-            value={filters.searchText}
+            type="date"
+            id="dateFrom"
+            name="dateFrom"
+            value={currentFilters.dateFrom}
             onChange={handleFilterChange}
-            className="border rounded px-2 py-1 text-sm w-full"
-            placeholder={t('searchPlaceholder')}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           />
         </div>
-        
         <div>
-          <label className="block text-sm font-medium mb-1">{t('category')}</label>
-          <select
-            name="category"
-            value={filters.category}
+          <label htmlFor="dateTo" className="block text-sm font-medium text-gray-700">
+            {t('dateTo')}
+          </label>
+          <input
+            type="date"
+            id="dateTo"
+            name="dateTo"
+            value={currentFilters.dateTo}
             onChange={handleFilterChange}
-            className="border rounded px-2 py-1 text-sm w-full"
-            multiple
-            size={4}
-          >
-            {uniqueCategories.map(category => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          />
         </div>
-        
+        {/* Search text filter */}
         <div>
-          <label className="block text-sm font-medium mb-1">{t('account')}</label>
-          <select
-            name="account"
-            value={filters.account}
+          <label htmlFor="searchText" className="block text-sm font-medium text-gray-700">
+            {t('search')}
+          </label>
+          <input
+            type="text"
+            id="searchText"
+            name="searchText"
+            value={currentFilters.searchText}
             onChange={handleFilterChange}
-            className="border rounded px-2 py-1 text-sm w-full"
+            placeholder={t('searchPlaceholder')}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          />
+        </div>
+        {/* Account filter */}
+        <div>
+          <label htmlFor="account" className="block text-sm font-medium text-gray-700">
+            {t('account')}
+          </label>
+          <select
+            id="account"
+            name="account"
+            value={currentFilters.account}
+            onChange={handleFilterChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           >
             <option value="">{t('all')}</option>
-            {uniqueAccounts.map(account => (
+            {uniqueAccounts.map((account) => (
               <option key={account} value={account}>
                 {account}
               </option>
             ))}
           </select>
         </div>
-        
+        {/* Counterparty filter */}
         <div>
-          <label className="block text-sm font-medium mb-1">{t('counterparty')}</label>
+          <label htmlFor="counterparty" className="block text-sm font-medium text-gray-700">
+            {t('counterparty')}
+          </label>
           <select
+            id="counterparty"
             name="counterparty"
-            value={filters.counterparty}
+            value={currentFilters.counterparty}
             onChange={handleFilterChange}
-            className="border rounded px-2 py-1 text-sm w-full"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           >
             <option value="">{t('all')}</option>
-            {uniqueCounterparties.map(counterparty => (
+            {uniqueCounterparties.map((counterparty) => (
               <option key={counterparty} value={counterparty}>
                 {counterparty}
               </option>
             ))}
           </select>
         </div>
-        
+        {/* Category filter - multi-select */}
         <div>
-          <label className="block text-sm font-medium mb-1">{t('productName')}</label>
+          <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+            {t('category')}
+          </label>
           <select
-            name="productName"
-            value={filters.productName}
-            onChange={handleFilterChange}
-            className="border rounded px-2 py-1 text-sm w-full"
+            id="category"
+            name="category"
             multiple
-            size={4}
+            size={3}
+            value={currentFilters.category}
+            onChange={handleFilterChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           >
-            {uniqueProducts.map(product => (
-              <option key={product} value={product}>
-                {product}
+            {uniqueCategories.map((category) => (
+              <option key={category} value={category}>
+                {category}
               </option>
             ))}
           </select>
+          <p className="text-xs text-gray-500 mt-1">{t('multiSelectHint')}</p>
+        </div>
+        {/* Product name filter - multi-select */}
+        <div>
+          <label htmlFor="productName" className="block text-sm font-medium text-gray-700">
+            {t('productName')}
+          </label>
+          <select
+            id="productName"
+            name="productName"
+            multiple
+            size={3}
+            value={currentFilters.productName}
+            onChange={handleFilterChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          >
+            {uniqueProductNames.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-500 mt-1">{t('multiSelectHint')}</p>
         </div>
       </div>
       

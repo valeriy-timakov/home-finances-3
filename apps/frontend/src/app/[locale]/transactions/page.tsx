@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { redirect } from 'next/navigation';
+import { redirect, useRouter, useSearchParams } from 'next/navigation';
 import ExpensesTable from '../../../components/ExpensesTable';
 import { useLocale, useTranslations } from 'next-intl';
 import { TransactionDto } from '../../../types/transactions';
@@ -25,9 +25,47 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const locale = useLocale();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // Get current filters from URL parameters - this will update on URL change
+  const currentFilters: FilterState = {
+    dateFrom: searchParams.get('startDate') || '',
+    dateTo: searchParams.get('endDate') || '',
+    searchText: searchParams.get('searchText') || '',
+    account: searchParams.get('accountId') || '',
+    counterparty: searchParams.get('counterpartyId') || '',
+    category: searchParams.getAll('categoryIds'),
+    productName: searchParams.getAll('productNames'),
+  };
+  
+  // Function to update URL with filter parameters
+  const updateUrlWithFilters = useCallback((filters: FilterState) => {
+    const params = new URLSearchParams();
+    
+    // Add filter parameters to URL
+    if (filters.dateFrom) params.append('startDate', filters.dateFrom);
+    if (filters.dateTo) params.append('endDate', filters.dateTo);
+    if (filters.searchText) params.append('searchText', filters.searchText);
+    if (filters.account) params.append('accountId', filters.account);
+    if (filters.counterparty) params.append('counterpartyId', filters.counterparty);
+    
+    // Add multiple values for category and productName
+    if (filters.category && filters.category.length > 0) {
+      filters.category.forEach(cat => params.append('categoryIds', cat));
+    }
+    
+    if (filters.productName && filters.productName.length > 0) {
+      filters.productName.forEach(prod => params.append('productNames', prod));
+    }
+    
+    // Update URL without refreshing the page
+    const url = `?${params.toString()}`;
+    router.replace(url, { scroll: false });
+  }, [router]);
   
   // Function to fetch transactions with filters
-  const fetchTransactions = useCallback(async (filters?: FilterState) => {
+  const fetchTransactions = useCallback(async (filters: FilterState) => {
     if (status !== 'authenticated') return;
     
     setLoading(true);
@@ -36,29 +74,27 @@ export default function TransactionsPage() {
       // Build query parameters
       const params = new URLSearchParams();
       
-      if (filters) {
-        // Date filters
-        if (filters.dateFrom) params.append('startDate', filters.dateFrom);
-        if (filters.dateTo) params.append('endDate', filters.dateTo);
-        
-        // Text search
-        if (filters.searchText) params.append('searchText', filters.searchText);
-        
-        // Account filter
-        if (filters.account) params.append('accountId', filters.account);
-        
-        // Counterparty filter
-        if (filters.counterparty) params.append('counterpartyId', filters.counterparty);
-        
-        // Category filters (multiple)
-        if (filters.category && filters.category.length > 0) {
-          filters.category.forEach(cat => params.append('categoryIds', cat));
-        }
-        
-        // Product name filters (multiple)
-        if (filters.productName && filters.productName.length > 0) {
-          filters.productName.forEach(prod => params.append('productNames', prod));
-        }
+      // Date filters
+      if (filters.dateFrom) params.append('startDate', filters.dateFrom);
+      if (filters.dateTo) params.append('endDate', filters.dateTo);
+      
+      // Text search
+      if (filters.searchText) params.append('searchText', filters.searchText);
+      
+      // Account filter
+      if (filters.account) params.append('accountId', filters.account);
+      
+      // Counterparty filter
+      if (filters.counterparty) params.append('counterpartyId', filters.counterparty);
+      
+      // Category filters (multiple)
+      if (filters.category && filters.category.length > 0) {
+        filters.category.forEach(cat => params.append('categoryIds', cat));
+      }
+      
+      // Product name filters (multiple)
+      if (filters.productName && filters.productName.length > 0) {
+        filters.productName.forEach(prod => params.append('productNames', prod));
       }
       
       // Construct the URL with query parameters
@@ -80,20 +116,25 @@ export default function TransactionsPage() {
     }
   }, [status, t]);
 
-  // Initial fetch on component mount
+  // Fetch data when URL parameters change
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchTransactions(currentFilters);
+    }
+  }, [status, fetchTransactions, searchParams]);
+
+  // Handle authentication redirect
   useEffect(() => {
     if (status === 'unauthenticated') {
       redirect(`/${locale}`);
     }
-
-    if (status === 'authenticated') {
-      fetchTransactions();
-    }
-  }, [status, fetchTransactions, locale]);
+  }, [status, locale]);
 
   // Handle filter changes
   const handleFilterChange = (filters: FilterState) => {
-    fetchTransactions(filters);
+    // Update URL with new filters
+    updateUrlWithFilters(filters);
+    // Fetching will happen automatically when URL changes via the effect
   };
 
   if (status === 'loading' || loading) {
@@ -110,8 +151,9 @@ export default function TransactionsPage() {
       {error && <div style={{ color: 'red' }}>{error}</div>}
       <ExpensesTable 
         data={expenses} 
-        onFilterChange={handleFilterChange} 
+        onFilterChange={handleFilterChange}
         loading={loading}
+        currentFilters={currentFilters}
       />
     </div>
   );
