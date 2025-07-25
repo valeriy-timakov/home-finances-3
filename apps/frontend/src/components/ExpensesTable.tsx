@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { TransactionDto } from '../types/transactions';
-import MultiSelectDropdown from './MultiSelectDropdown';
+import { SelectItem } from '../types/select-items';
+import { UniversalSelectDropdown } from './UniversalSelectDropdown';
 
 function formatDate(dateStr: string, locale: string) {
   return new Date(dateStr).toLocaleDateString(locale);
@@ -31,31 +32,32 @@ type FilterState = {
   productName: string[];
 };
 
+// Export FilterState type for use in other components
+export type { FilterState };
+
 type ExpensesTableProps = {
   data: TransactionDto[];
   onFilterChange?: (filters: FilterState) => void;
   loading?: boolean;
   currentFilters: FilterState;
+  productOptions: SelectItem[];
+  categoryOptions: SelectItem[];
+  filterOptionsLoading?: boolean;
 };
 
-export default function ExpensesTable({ data, onFilterChange, loading = false, currentFilters }: ExpensesTableProps) {
+export default function ExpensesTable({ 
+  data, 
+  onFilterChange, 
+  loading = false, 
+  currentFilters,
+  productOptions,
+  categoryOptions,
+  filterOptionsLoading = false
+}: ExpensesTableProps) {
   const t = useTranslations('ExpensesTable');
   const locale = useLocale();
   
-  // Extract unique values for filter dropdowns
-  const uniqueCategories = useMemo(() => {
-    const categories = new Map<string, { id: number, name: string }>();
-    data.forEach(transaction => {
-      transaction.details?.forEach(detail => {
-        const category = detail.productOrService?.category;
-        if (category && category.id && category.name) {
-          categories.set(category.id.toString(), { id: category.id, name: category.name });
-        }
-      });
-    });
-    return Array.from(categories.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [data]);
-  
+  // Extract unique values for filter dropdowns (only for accounts and counterparties)
   const uniqueAccounts = useMemo(() => {
     const accounts = new Set<string>();
     data.forEach(transaction => {
@@ -70,17 +72,6 @@ export default function ExpensesTable({ data, onFilterChange, loading = false, c
       counterparties.add(transaction.counterparty.name);
     });
     return Array.from(counterparties).sort();
-  }, [data]);
-  
-  const uniqueProductNames = useMemo(() => {
-    const products = new Set<string>();
-    data.forEach(transaction => {
-      transaction.details?.forEach(detail => {
-        const productName = detail.productOrService?.name;
-        if (productName) products.add(productName);
-      });
-    });
-    return Array.from(products).sort();
   }, [data]);
   
   // Handle filter changes
@@ -103,9 +94,29 @@ export default function ExpensesTable({ data, onFilterChange, loading = false, c
     }
   };
   
-  // Handle multi-select dropdown changes
-  const handleMultiSelectChange = (name: string, selectedValues: string[]) => {
-    const updatedFilters = { ...currentFilters, [name]: selectedValues };
+  // Handle universal select dropdown changes
+  const handleCategoryChange = (selectedIds: number[]) => {
+    const updatedFilters = { 
+      ...currentFilters, 
+      category: selectedIds.map(id => id.toString()) 
+    };
+    
+    if (onFilterChange) {
+      onFilterChange(updatedFilters);
+    }
+  };
+
+  // Handle product name change
+  const handleProductChange = (selectedIds: number[]) => {
+    // Find the product names corresponding to the selected IDs
+    const selectedProductNames = productOptions
+      .filter(product => selectedIds.includes(product.id))
+      .map(product => product.label);
+    
+    const updatedFilters = { 
+      ...currentFilters, 
+      productName: selectedProductNames 
+    };
     
     if (onFilterChange) {
       onFilterChange(updatedFilters);
@@ -118,6 +129,16 @@ export default function ExpensesTable({ data, onFilterChange, loading = false, c
     // Just return the data as is, since filtering is now done on the backend
     return data;
   }, [data]);
+
+  // Convert string IDs back to numbers for the category dropdown
+  const selectedCategoryIds = currentFilters.category
+    .map(id => parseInt(id))
+    .filter(id => !isNaN(id));
+
+  // Find product IDs that match the currently selected product names
+  const selectedProductIds = productOptions
+    .filter(product => currentFilters.productName.includes(product.label))
+    .map(product => product.id);
 
   return (
     <div className="w-full">
@@ -205,32 +226,32 @@ export default function ExpensesTable({ data, onFilterChange, loading = false, c
             ))}
           </select>
         </div>
-        {/* Category filter - multi-select dropdown */}
+        {/* Category filter - universal select dropdown */}
         <div>
-          <MultiSelectDropdown
-            id="category"
-            name="category"
-            options={uniqueCategories.map(category => ({
-              value: category.id.toString(),
-              label: category.name
-            }))}
-            selectedValues={currentFilters.category}
-            onChange={handleMultiSelectChange}
-            label={t('category')}
+          <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+            {t('category')}
+          </label>
+          <UniversalSelectDropdown
+            items={categoryOptions}
+            selectedIds={selectedCategoryIds}
+            onChange={handleCategoryChange}
+            placeholder={t('all')}
+            disabled={filterOptionsLoading}
+            className="mt-1"
           />
         </div>
-        {/* Product name filter - multi-select dropdown */}
+        {/* Product name filter - universal select dropdown */}
         <div>
-          <MultiSelectDropdown
-            id="productName"
-            name="productName"
-            options={uniqueProductNames.map(name => ({
-              value: name,
-              label: name
-            }))}
-            selectedValues={currentFilters.productName}
-            onChange={handleMultiSelectChange}
-            label={t('productName')}
+          <label htmlFor="productName" className="block text-sm font-medium text-gray-700">
+            {t('productName')}
+          </label>
+          <UniversalSelectDropdown
+            items={productOptions}
+            selectedIds={selectedProductIds}
+            onChange={handleProductChange}
+            placeholder={t('all')}
+            disabled={filterOptionsLoading}
+            className="mt-1"
           />
         </div>
       </div>
@@ -295,6 +316,26 @@ export default function ExpensesTable({ data, onFilterChange, loading = false, c
                 ))}
               </React.Fragment>
             ))}
+            
+            {/* Loading state */}
+            {loading && (
+              <tr>
+                <td colSpan={6} className="py-4 text-center">
+                  <div className="flex justify-center">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+                  </div>
+                </td>
+              </tr>
+            )}
+            
+            {/* Empty state */}
+            {!loading && filteredData.length === 0 && (
+              <tr>
+                <td colSpan={6} className="py-4 text-center text-gray-500">
+                  {t('noTransactions')}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

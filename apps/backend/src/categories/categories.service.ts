@@ -36,4 +36,37 @@ export class CategoriesService {
     });
     return tree;
   }
+
+  async findSelectItems(agentId: number) {
+    // Отримати всі категорії з agentId
+    const categories = await this.prisma.category.findMany({
+      where: {
+        agentId,
+      },
+      select: {
+        id: true,
+        name: true,
+        superCategoryId: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    // Створюємо мапу для побудови повних шляхів категорій
+    const map = new Map<number, { id: number; name: string; superCategoryId: number | null }>();
+    categories.forEach(cat => map.set(cat.id, cat));
+
+    // Функція для отримання повного шляху категорії
+    const getCategoryPath = (categoryId: number): string => {
+      const category = map.get(categoryId);
+      if (!category) return '';
+      if (category.superCategoryId === null) return category.name;
+      return `${getCategoryPath(category.superCategoryId)} > ${category.name}`;
+    };
+
+    // Формуємо список селект-айтемів з уніфікованим форматом
+    return categories.map(category => ({
+      id: category.id,
+      label: getCategoryPath(category.id)
+    }));
+  }
 }

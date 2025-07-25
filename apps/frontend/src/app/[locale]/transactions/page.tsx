@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import ExpensesTable from '../../../components/ExpensesTable';
 import { FilterState } from '../../../components/ExpensesTable';
 import { TransactionDto } from '../../../types/transactions';
+import { SelectItem } from '../../../types/select-items';
 
 export default function TransactionsPage() {
   const { data: session, status } = useSession();
@@ -18,6 +19,9 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<TransactionDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [hashParams, setHashParams] = useState<URLSearchParams | null>(null);
+  const [productOptions, setProductOptions] = useState<SelectItem[]>([]);
+  const [categoryOptions, setCategoryOptions] = useState<SelectItem[]>([]);
+  const [filterOptionsLoading, setFilterOptionsLoading] = useState(false);
 
   // Function to fetch transactions with filters
   const fetchTransactions = useCallback(async (filters: FilterState) => {
@@ -168,6 +172,42 @@ export default function TransactionsPage() {
     }
   }, [status, fetchTransactions, hashParams]);
 
+  // Fetch filter options (products and categories) on page load
+  useEffect(() => {
+    if (status === 'authenticated') {
+      const fetchFilterOptions = async () => {
+        setFilterOptionsLoading(true);
+        try {
+          // Fetch product options
+          const productResponse = await fetch('/api/select_items/products');
+          if (productResponse.ok) {
+            const productData = await productResponse.json();
+            setProductOptions(productData);
+            console.log('Loaded product options:', productData.length);
+          } else {
+            console.error('Failed to fetch product options');
+          }
+          
+          // Fetch category options
+          const categoryResponse = await fetch('/api/select_items/categories');
+          if (categoryResponse.ok) {
+            const categoryData = await categoryResponse.json();
+            setCategoryOptions(categoryData);
+            console.log('Loaded category options:', categoryData.length);
+          } else {
+            console.error('Failed to fetch category options');
+          }
+        } catch (error) {
+          console.error('Error fetching filter options:', error);
+        } finally {
+          setFilterOptionsLoading(false);
+        }
+      };
+      
+      fetchFilterOptions();
+    }
+  }, [status]);
+
   // Handle authentication redirect
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -181,7 +221,7 @@ export default function TransactionsPage() {
     updateHashWithFilters(filters);
   }, [updateHashWithFilters]);
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading' || loading || filterOptionsLoading) {
     return <div>{t('loading')}</div>;
   }
 
@@ -194,6 +234,9 @@ export default function TransactionsPage() {
           onFilterChange={handleFilterChange} 
           loading={loading}
           currentFilters={currentFilters}
+          productOptions={productOptions}
+          categoryOptions={categoryOptions}
+          filterOptionsLoading={filterOptionsLoading}
         />
       </div>
     );
