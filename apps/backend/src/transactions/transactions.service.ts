@@ -65,7 +65,7 @@ export class TransactionsService {
   }
 
   async findAll(query: QueryTransactionDto, agentId: number) {
-    const { accountId, categoryId, productName, startDate, endDate } = query;
+    const { accountId, categoryIds, productNames, startDate, endDate, counterpartyId, searchText } = query;
 
     const whereClause: any = {
       agentId,
@@ -75,26 +75,79 @@ export class TransactionsService {
       whereClause.accountId = accountId;
     }
 
+    if (counterpartyId) {
+      whereClause.counterpartyId = counterpartyId;
+    }
+
+    if (searchText) {
+      whereClause.name = {
+        contains: searchText,
+        mode: 'insensitive'
+      };
+    }
+
     if (startDate || endDate) {
       whereClause.date = {};
-      if (startDate) whereClause.date.gte = startDate;
-      if (endDate) whereClause.date.lte = endDate;
+      
+      // Ensure proper ISO-8601 DateTime format for Prisma
+      if (startDate) {
+        // If startDate is a string, ensure it's a valid ISO date string
+        if (typeof startDate === 'string') {
+          try {
+            // Create a Date object and format it as ISO string
+            const date = new Date(startDate);
+            if (!isNaN(date.getTime())) {
+              whereClause.date.gte = date.toISOString();
+            }
+          } catch (e) {
+            console.error('Invalid startDate format:', startDate, e);
+          }
+        } else {
+          // If it's already a Date object, just convert to ISO string
+          whereClause.date.gte = startDate.toISOString();
+        }
+      }
+      
+      if (endDate) {
+        // If endDate is a string, ensure it's a valid ISO date string
+        if (typeof endDate === 'string') {
+          try {
+            // Create a Date object and format it as ISO string
+            const date = new Date(endDate);
+            if (!isNaN(date.getTime())) {
+              whereClause.date.lte = date.toISOString();
+            }
+          } catch (e) {
+            console.error('Invalid endDate format:', endDate, e);
+          }
+        } else {
+          // If it's already a Date object, just convert to ISO string
+          whereClause.date.lte = endDate.toISOString();
+        }
+      }
     }
 
     // Фільтрація за вкладеними сутностями
-    if (categoryId || productName) {
+    if ((categoryIds && categoryIds.length > 0) || (productNames && productNames.length > 0)) {
       whereClause.details = {
-        some: {
-          productOrService: {}
-        }
+        some: {}
       };
-      if(categoryId) {
-        whereClause.details.some.productOrService.categoryId = categoryId;
+      
+      if (categoryIds && categoryIds.length > 0) {
+        whereClause.details.some.productOrService = {
+          categoryId: {
+            in: categoryIds
+          }
+        };
       }
-      if(productName) {
+      
+      if (productNames && productNames.length > 0) {
+        if (!whereClause.details.some.productOrService) {
+          whereClause.details.some.productOrService = {};
+        }
+        
         whereClause.details.some.productOrService.name = {
-          contains: productName,
-          mode: 'insensitive' // Пошук без урахування регістру
+          in: productNames
         };
       }
     }

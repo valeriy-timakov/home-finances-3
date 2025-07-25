@@ -1,28 +1,46 @@
-import { Type } from 'class-transformer';
-import { IsDate, IsInt, IsOptional, IsString } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsArray, IsDateString, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class QueryTransactionDto {
   @IsOptional()
-  @IsInt()
+  @IsNumber()
   @Type(() => Number)
   accountId?: number;
 
   @IsOptional()
-  @IsInt()
+  @IsArray()
   @Type(() => Number)
-  categoryId?: number;
+  categoryIds?: number[];
+
+  @IsOptional()
+  @IsArray()
+  @Type(() => String)
+  productNames?: string[];
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  counterpartyId?: number;
 
   @IsOptional()
   @IsString()
-  productName?: string;
+  searchText?: string;
 
   @IsOptional()
-  @IsDate()
-  @Type(() => Date)
+  @IsDateString()
+  @Transform(({ value }) => {
+    if (!value) return undefined;
+    const date = new Date(value);
+    return isNaN(date.getTime()) ? undefined : date;
+  })
   startDate?: Date;
 
   @IsOptional()
-  @IsDate()
-  @Type(() => Date)
+  @IsDateString()
+  @Transform(({ value }) => {
+    if (!value) return undefined;
+    const date = new Date(value);
+    return isNaN(date.getTime()) ? undefined : date;
+  })
   endDate?: Date;
 }

@@ -24,12 +24,19 @@ type FilterState = {
   dateFrom: string;
   dateTo: string;
   searchText: string;
-  category: string;
+  category: string[];
   account: string;
   counterparty: string;
+  productName: string[];
 };
 
-export default function ExpensesTable({ data }: { data: TransactionDto[] }) {
+type ExpensesTableProps = {
+  data: TransactionDto[];
+  onFilterChange?: (filters: FilterState) => void;
+  loading?: boolean;
+};
+
+export default function ExpensesTable({ data, onFilterChange, loading = false }: ExpensesTableProps) {
   const t = useTranslations('ExpensesTable');
   const locale = useLocale();
   
@@ -38,9 +45,10 @@ export default function ExpensesTable({ data }: { data: TransactionDto[] }) {
     dateFrom: '',
     dateTo: '',
     searchText: '',
-    category: '',
+    category: [],
     account: '',
     counterparty: '',
+    productName: [],
   });
   
   // Extract unique values for filter dropdowns
@@ -71,50 +79,45 @@ export default function ExpensesTable({ data }: { data: TransactionDto[] }) {
     return Array.from(counterparties).sort();
   }, [data]);
   
+  const uniqueProducts = useMemo(() => {
+    const products = new Set<string>();
+    data.forEach(transaction => {
+      transaction.details?.forEach(detail => {
+        const productName = detail.productOrService?.name;
+        if (productName) products.add(productName);
+      });
+    });
+    return Array.from(products).sort();
+  }, [data]);
+  
   // Handle filter changes
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
+    
+    let updatedFilters: FilterState;
+    
+    // Handle multi-select for category and productName
+    if (name === 'category' || name === 'productName') {
+      const select = e.target as HTMLSelectElement;
+      const selectedOptions = Array.from(select.selectedOptions).map(option => option.value);
+      updatedFilters = { ...filters, [name]: selectedOptions };
+    } else {
+      updatedFilters = { ...filters, [name]: value };
+    }
+    
+    setFilters(updatedFilters);
+    
+    if (onFilterChange) {
+      onFilterChange(updatedFilters);
+    }
   };
   
   // Apply filters to data
   const filteredData = useMemo(() => {
-    return data.filter(transaction => {
-      // Date filter
-      const transactionDate = new Date(transaction.date);
-      if (filters.dateFrom && new Date(filters.dateFrom) > transactionDate) {
-        return false;
-      }
-      if (filters.dateTo && new Date(filters.dateTo) < transactionDate) {
-        return false;
-      }
-      
-      // Account filter
-      if (filters.account && transaction.account.name !== filters.account) {
-        return false;
-      }
-      
-      // Counterparty filter
-      if (filters.counterparty && transaction.counterparty.name !== filters.counterparty) {
-        return false;
-      }
-      
-      // Text search in transaction name
-      if (filters.searchText && !transaction.name.toLowerCase().includes(filters.searchText.toLowerCase())) {
-        return false;
-      }
-      
-      // Category filter - keep transaction if any detail has the selected category
-      if (filters.category) {
-        const hasCategory = transaction.details?.some(
-          detail => detail.productOrService?.category?.name === filters.category
-        );
-        if (!hasCategory) return false;
-      }
-      
-      return true;
-    });
-  }, [data, filters]);
+    // No longer filtering data on the frontend
+    // Just return the data as is, since filtering is now done on the backend
+    return data;
+  }, [data]);
 
   return (
     <div className="w-full">
@@ -161,8 +164,9 @@ export default function ExpensesTable({ data }: { data: TransactionDto[] }) {
             value={filters.category}
             onChange={handleFilterChange}
             className="border rounded px-2 py-1 text-sm w-full"
+            multiple
+            size={4}
           >
-            <option value="">{t('all')}</option>
             {uniqueCategories.map(category => (
               <option key={category} value={category}>
                 {category}
@@ -200,6 +204,24 @@ export default function ExpensesTable({ data }: { data: TransactionDto[] }) {
             {uniqueCounterparties.map(counterparty => (
               <option key={counterparty} value={counterparty}>
                 {counterparty}
+              </option>
+            ))}
+          </select>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('productName')}</label>
+          <select
+            name="productName"
+            value={filters.productName}
+            onChange={handleFilterChange}
+            className="border rounded px-2 py-1 text-sm w-full"
+            multiple
+            size={4}
+          >
+            {uniqueProducts.map(product => (
+              <option key={product} value={product}>
+                {product}
               </option>
             ))}
           </select>
