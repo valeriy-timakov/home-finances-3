@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { TransactionDto } from '../types/transactions';
+import MultiSelectDropdown from './MultiSelectDropdown';
 
 function formatDate(dateStr: string, locale: string) {
   return new Date(dateStr).toLocaleDateString(locale);
@@ -102,6 +103,15 @@ export default function ExpensesTable({ data, onFilterChange, loading = false, c
     }
   };
   
+  // Handle multi-select dropdown changes
+  const handleMultiSelectChange = (name: string, selectedValues: string[]) => {
+    const updatedFilters = { ...currentFilters, [name]: selectedValues };
+    
+    if (onFilterChange) {
+      onFilterChange(updatedFilters);
+    }
+  };
+
   // Apply filters to data
   const filteredData = useMemo(() => {
     // No longer filtering data on the frontend
@@ -195,49 +205,33 @@ export default function ExpensesTable({ data, onFilterChange, loading = false, c
             ))}
           </select>
         </div>
-        {/* Category filter - multi-select */}
+        {/* Category filter - multi-select dropdown */}
         <div>
-          <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-            {t('category')}
-          </label>
-          <select
+          <MultiSelectDropdown
             id="category"
             name="category"
-            multiple
-            size={3}
-            value={currentFilters.category}
-            onChange={handleFilterChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-          >
-            {uniqueCategories.map((category) => (
-              <option key={category.id} value={category.id.toString()}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-gray-500 mt-1">{t('multiSelectHint')}</p>
+            options={uniqueCategories.map(category => ({
+              value: category.id.toString(),
+              label: category.name
+            }))}
+            selectedValues={currentFilters.category}
+            onChange={handleMultiSelectChange}
+            label={t('category')}
+          />
         </div>
-        {/* Product name filter - multi-select */}
+        {/* Product name filter - multi-select dropdown */}
         <div>
-          <label htmlFor="productName" className="block text-sm font-medium text-gray-700">
-            {t('productName')}
-          </label>
-          <select
+          <MultiSelectDropdown
             id="productName"
             name="productName"
-            multiple
-            size={3}
-            value={currentFilters.productName}
-            onChange={handleFilterChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-          >
-            {uniqueProductNames.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-gray-500 mt-1">{t('multiSelectHint')}</p>
+            options={uniqueProductNames.map(name => ({
+              value: name,
+              label: name
+            }))}
+            selectedValues={currentFilters.productName}
+            onChange={handleMultiSelectChange}
+            label={t('productName')}
+          />
         </div>
       </div>
       
