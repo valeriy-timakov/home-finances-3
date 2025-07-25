@@ -24,7 +24,7 @@ type FilterState = {
   dateFrom: string;
   dateTo: string;
   searchText: string;
-  category: string[];
+  category: string[]; // Category IDs as strings
   account: string;
   counterparty: string;
   productName: string[];
@@ -43,14 +43,16 @@ export default function ExpensesTable({ data, onFilterChange, loading = false, c
   
   // Extract unique values for filter dropdowns
   const uniqueCategories = useMemo(() => {
-    const categories = new Set<string>();
+    const categories = new Map<string, { id: number, name: string }>();
     data.forEach(transaction => {
       transaction.details?.forEach(detail => {
-        const category = detail.productOrService?.category?.name;
-        if (category) categories.add(category);
+        const category = detail.productOrService?.category;
+        if (category && category.id && category.name) {
+          categories.set(category.id.toString(), { id: category.id, name: category.name });
+        }
       });
     });
-    return Array.from(categories).sort();
+    return Array.from(categories.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [data]);
   
   const uniqueAccounts = useMemo(() => {
@@ -208,8 +210,8 @@ export default function ExpensesTable({ data, onFilterChange, loading = false, c
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           >
             {uniqueCategories.map((category) => (
-              <option key={category} value={category}>
-                {category}
+              <option key={category.id} value={category.id.toString()}>
+                {category.name}
               </option>
             ))}
           </select>
