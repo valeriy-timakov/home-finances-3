@@ -51,6 +51,72 @@
   border-radius: 4px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Search container styles */
+.searchContainer {
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 1;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.2);
+}
+
+/* Action buttons styles */
+.actionButtons {
+  display: flex;
+  padding: 8px;
+  gap: 8px;
+}
+
+.actionButton {
+  flex: 1;
+  padding: 6px 8px;
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.actionButton:hover:not(:disabled) {
+  background-color: #e5e7eb;
+}
+
+.actionButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background-color: #eee;
+  margin: 0 8px;
+}
+
+/* Checkbox container */
+.checkboxContainer {
+  overflow-y: auto;
+  max-height: 200px;
 }
 
 .checkboxItem {
@@ -74,4 +140,5 @@
   padding: 8px 12px;
   color: #888;
   font-style: italic;
+  text-align: center;
 }

@@ -20,13 +20,28 @@ export const UniversalSelectDropdown: React.FC<UniversalSelectDropdownProps> = (
   disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const toggleDropdown = () => {
     if (!disabled) {
       setIsOpen(!isOpen);
+      // Reset search term when closing dropdown
+      if (isOpen) {
+        setSearchTerm('');
+      }
     }
   };
+
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  }, [isOpen]);
 
   const handleCheckboxChange = (id: number) => {
     const newSelectedIds = selectedIds.includes(id)
@@ -38,6 +53,7 @@ export const UniversalSelectDropdown: React.FC<UniversalSelectDropdownProps> = (
   const handleClickOutside = (event: MouseEvent) => {
     if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
       setIsOpen(false);
+      setSearchTerm('');
     }
   };
 
@@ -47,6 +63,26 @@ export const UniversalSelectDropdown: React.FC<UniversalSelectDropdownProps> = (
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  const handleSelectAll = () => {
+    // Select all items that match the current filter
+    const filteredItemIds = filteredItems.map(item => item.id);
+    onChange(filteredItemIds);
+  };
+
+  const handleClearAll = () => {
+    // Clear all selected items
+    onChange([]);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  // Filter items based on search term
+  const filteredItems = items.filter(item => 
+    item.label.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const selectedLabels = items
     .filter(item => selectedIds.includes(item.id))
@@ -69,19 +105,58 @@ export const UniversalSelectDropdown: React.FC<UniversalSelectDropdownProps> = (
       </div>
       {isOpen && (
         <div className={styles.dropdownMenu}>
-          {items.map(item => (
-            <label key={item.id} className={styles.checkboxItem}>
-              <input
-                type="checkbox"
-                checked={selectedIds.includes(item.id)}
-                onChange={() => handleCheckboxChange(item.id)}
-              />
-              <span className={styles.checkboxLabel}>{item.label}</span>
-            </label>
-          ))}
-          {items.length === 0 && (
-            <div className={styles.noItems}>No items available</div>
-          )}
+          {/* Search input */}
+          <div className={styles.searchContainer}>
+            <input
+              ref={searchInputRef}
+              type="text"
+              className={styles.searchInput}
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+          
+          {/* Select All / Clear All buttons */}
+          <div className={styles.actionButtons}>
+            <button 
+              className={styles.actionButton} 
+              onClick={handleSelectAll}
+              disabled={filteredItems.length === 0}
+            >
+              Select All
+            </button>
+            <button 
+              className={styles.actionButton} 
+              onClick={handleClearAll}
+              disabled={selectedIds.length === 0}
+            >
+              Clear All
+            </button>
+          </div>
+          
+          {/* Divider */}
+          <div className={styles.divider}></div>
+          
+          {/* Checkbox items */}
+          <div className={styles.checkboxContainer}>
+            {filteredItems.map(item => (
+              <label key={item.id} className={styles.checkboxItem}>
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(item.id)}
+                  onChange={() => handleCheckboxChange(item.id)}
+                />
+                <span className={styles.checkboxLabel}>{item.label}</span>
+              </label>
+            ))}
+            {filteredItems.length === 0 && (
+              <div className={styles.noItems}>
+                {searchTerm ? 'No matching items' : 'No items available'}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
