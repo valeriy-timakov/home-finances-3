@@ -74,7 +74,10 @@
     "searchPlaceholder": "Пошук за назвою транзакції",
     "account": "Рахунок",
     "counterparty": "Контрагент",
-    "all": "Всі"
+    "all": "Всі",
+    "dateFrom": "З дати",
+    "dateTo": "По дату",
+    "multiSelectHint": "Можна вибрати декілька значень"
   },
   "LocaleSwitcher": {
     "changeLocale": "Змінити мову"

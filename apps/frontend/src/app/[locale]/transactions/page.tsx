@@ -1,49 +1,117 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { redirect, useRouter, useSearchParams } from 'next/navigation';
-import ExpensesTable from '../../../components/ExpensesTable';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import ExpensesTable from '../../../components/ExpensesTable';
+import { FilterState } from '../../../components/ExpensesTable';
 import { TransactionDto } from '../../../types/transactions';
 
-// Define the filter state type
-type FilterState = {
-  dateFrom: string;
-  dateTo: string;
-  searchText: string;
-  category: string[];
-  account: string;
-  counterparty: string;
-  productName: string[];
-};
-
 export default function TransactionsPage() {
-  const t = useTranslations('TransactionsPage');
   const { data: session, status } = useSession();
-  const [expenses, setExpenses] = useState<TransactionDto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const locale = useLocale();
   const router = useRouter();
+  const t = useTranslations('TransactionsPage');
+  const locale = useLocale();
   const searchParams = useSearchParams();
   
-  // Get current filters from URL parameters - this will update on URL change
+  const [transactions, setTransactions] = useState<TransactionDto[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [hashParams, setHashParams] = useState<URLSearchParams | null>(null);
+
+  // Function to fetch transactions with filters
+  const fetchTransactions = useCallback(async (filters: FilterState) => {
+    console.log('fetchTransactions called with filters:', filters);
+    console.log('Session status:', status);
+    console.log('Session token:', session?.sessionToken ? 'exists' : 'missing');
+    
+    if (!session) {
+      console.error('No session available, cannot fetch transactions');
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      // Build query parameters
+      const params = new URLSearchParams();
+      
+      if (filters.dateFrom) params.append('startDate', filters.dateFrom);
+      if (filters.dateTo) params.append('endDate', filters.dateTo);
+      if (filters.searchText) params.append('searchText', filters.searchText);
+      if (filters.account) params.append('accountId', filters.account);
+      if (filters.counterparty) params.append('counterpartyId', filters.counterparty);
+      
+      // Add multiple values for category and productName
+      if (filters.category && filters.category.length > 0) {
+        filters.category.forEach(cat => params.append('categoryIds', cat));
+      }
+      
+      if (filters.productName && filters.productName.length > 0) {
+        filters.productName.forEach(prod => params.append('productNames', prod));
+      }
+      
+      // Fetch data from API
+      const apiUrl = `/api/transactions${params.toString() ? `?${params.toString()}` : ''}`;
+      console.log('Fetching from:', apiUrl);
+      const response = await fetch(apiUrl);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch transactions');
+      }
+      
+      const data = await response.json();
+      console.log('Received transactions data:', data);
+      setTransactions(data);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [session, status]);
+
+  // Initialize hashParams from window.location.hash on client side
+  useEffect(() => {
+    console.log('Initial useEffect running');
+    console.log('Authentication status:', status);
+    
+    // This runs only on client side
+    const hash = window.location.hash.substring(1); // Remove the # character
+    console.log('Initial hash value:', hash);
+    setHashParams(new URLSearchParams(hash));
+    
+    // If there's no hash on initial load, fetch all transactions
+    if (!hash && status === 'authenticated') {
+      console.log('No hash and authenticated, fetching all transactions');
+      fetchTransactions({
+        dateFrom: '',
+        dateTo: '',
+        searchText: '',
+        category: [],
+        account: '',
+        counterparty: '',
+        productName: [],
+      });
+    }
+  }, [status, fetchTransactions]);
+
+  // Parse filter values from hash parameters
   const currentFilters: FilterState = {
-    dateFrom: searchParams.get('startDate') || '',
-    dateTo: searchParams.get('endDate') || '',
-    searchText: searchParams.get('searchText') || '',
-    account: searchParams.get('accountId') || '',
-    counterparty: searchParams.get('counterpartyId') || '',
-    category: searchParams.getAll('categoryIds'),
-    productName: searchParams.getAll('productNames'),
+    dateFrom: hashParams?.get('startDate') || '',
+    dateTo: hashParams?.get('endDate') || '',
+    searchText: hashParams?.get('searchText') || '',
+    category: hashParams?.getAll('categoryIds') || [],
+    account: hashParams?.get('accountId') || '',
+    counterparty: hashParams?.get('counterpartyId') || '',
+    productName: hashParams?.getAll('productNames') || [],
   };
-  
-  // Function to update URL with filter parameters
-  const updateUrlWithFilters = useCallback((filters: FilterState) => {
+
+  // Function to update hash with filter parameters
+  const updateHashWithFilters = useCallback((filters: FilterState) => {
+    console.log('updateHashWithFilters called with:', filters);
     const params = new URLSearchParams();
     
-    // Add filter parameters to URL
+    // Add filter parameters to hash
     if (filters.dateFrom) params.append('startDate', filters.dateFrom);
     if (filters.dateTo) params.append('endDate', filters.dateTo);
     if (filters.searchText) params.append('searchText', filters.searchText);
@@ -59,102 +127,77 @@ export default function TransactionsPage() {
       filters.productName.forEach(prod => params.append('productNames', prod));
     }
     
-    // Update URL without refreshing the page
-    const url = `?${params.toString()}`;
-    router.replace(url, { scroll: false });
-  }, [router]);
-  
-  // Function to fetch transactions with filters
-  const fetchTransactions = useCallback(async (filters: FilterState) => {
-    if (status !== 'authenticated') return;
-    
-    setLoading(true);
-    
-    try {
-      // Build query parameters
-      const params = new URLSearchParams();
-      
-      // Date filters
-      if (filters.dateFrom) params.append('startDate', filters.dateFrom);
-      if (filters.dateTo) params.append('endDate', filters.dateTo);
-      
-      // Text search
-      if (filters.searchText) params.append('searchText', filters.searchText);
-      
-      // Account filter
-      if (filters.account) params.append('accountId', filters.account);
-      
-      // Counterparty filter
-      if (filters.counterparty) params.append('counterpartyId', filters.counterparty);
-      
-      // Category filters (multiple)
-      if (filters.category && filters.category.length > 0) {
-        filters.category.forEach(cat => params.append('categoryIds', cat));
-      }
-      
-      // Product name filters (multiple)
-      if (filters.productName && filters.productName.length > 0) {
-        filters.productName.forEach(prod => params.append('productNames', prod));
-      }
-      
-      // Construct the URL with query parameters
-      const url = `/api/transactions${params.toString() ? `?${params.toString()}` : ''}`;
-      
-      const res = await fetch(url);
-      
-      if (!res.ok) {
-        throw new Error(t('loadingError'));
-      }
-      
-      const data = await res.json();
-      console.log('API Response:', JSON.stringify(data, null, 2));
-      setExpenses(data);
-    } catch (e: any) {
-      setError(e.message || t('errorOccurred'));
-    } finally {
-      setLoading(false);
-    }
-  }, [status, t]);
+    // Update hash without refreshing the page
+    window.location.hash = params.toString();
+    setHashParams(params);
+  }, []);
 
-  // Fetch data when URL parameters change
+  // Listen for hash changes
   useEffect(() => {
-    if (status === 'authenticated') {
-      fetchTransactions(currentFilters);
+    console.log('Setting up hash change listener');
+    const handleHashChange = () => {
+      const hash = window.location.hash.substring(1);
+      console.log('Hash changed to:', hash);
+      const newParams = new URLSearchParams(hash);
+      setHashParams(newParams);
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Fetch data when hash parameters change
+  useEffect(() => {
+    console.log('Hash params changed useEffect running');
+    console.log('Current hashParams:', hashParams ? Object.fromEntries(hashParams.entries()) : null);
+    console.log('Authentication status:', status);
+    
+    if (status === 'authenticated' && hashParams) {
+      console.log('Authenticated and hashParams exist, fetching transactions');
+      const filters: FilterState = {
+        dateFrom: hashParams.get('startDate') || '',
+        dateTo: hashParams.get('endDate') || '',
+        searchText: hashParams.get('searchText') || '',
+        category: hashParams.getAll('categoryIds') || [],
+        account: hashParams.get('accountId') || '',
+        counterparty: hashParams.get('counterpartyId') || '',
+        productName: hashParams.getAll('productNames') || [],
+      };
+      console.log('Filters from hash:', filters);
+      fetchTransactions(filters);
     }
-  }, [status, fetchTransactions, searchParams]);
+  }, [status, fetchTransactions, hashParams]);
 
   // Handle authentication redirect
   useEffect(() => {
     if (status === 'unauthenticated') {
-      redirect(`/${locale}`);
+      router.push(`/${locale}/login`);
     }
-  }, [status, locale]);
+  }, [status, locale, router]);
 
-  // Handle filter changes
-  const handleFilterChange = (filters: FilterState) => {
-    // Update URL with new filters
-    updateUrlWithFilters(filters);
-    // Fetching will happen automatically when URL changes via the effect
-  };
+  // Handle filter changes from the ExpensesTable component
+  const handleFilterChange = useCallback((filters: FilterState) => {
+    console.log('handleFilterChange called with:', filters);
+    updateHashWithFilters(filters);
+  }, [updateHashWithFilters]);
 
   if (status === 'loading' || loading) {
     return <div>{t('loading')}</div>;
   }
 
-  if (!session) {
-    return null; // redirect in useEffect will handle this
+  if (status === 'authenticated') {
+    return (
+      <div>
+        <h1>{t('title')}</h1>
+        <ExpensesTable 
+          data={transactions} 
+          onFilterChange={handleFilterChange} 
+          loading={loading}
+          currentFilters={currentFilters}
+        />
+      </div>
+    );
   }
 
-  return (
-    <div>
-      <h2>{t('title')}</h2>
-      {error && <div style={{ color: 'red' }}>{error}</div>}
-      <ExpensesTable 
-        data={expenses} 
-        onFilterChange={handleFilterChange}
-        loading={loading}
-        currentFilters={currentFilters}
-      />
-    </div>
-  );
+  return null;
 }

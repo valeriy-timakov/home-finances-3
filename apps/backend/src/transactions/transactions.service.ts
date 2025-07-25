@@ -256,7 +256,9 @@ export class TransactionsService {
     });
 
     // Filter out transactions with no details after filtering
-    const filteredTransactionsWithDetails = filteredTransactions.filter(transaction => transaction.details.length > 0);
+    const filteredTransactionsWithDetails = categoryIds || productNames 
+      ? filteredTransactions.filter(transaction => transaction.details.length > 0)
+      : filteredTransactions; // If no category or product filters, keep all transactions
 
     // Мапа категорій по id
     const categoriesMap = filteredTransactionsWithDetails
