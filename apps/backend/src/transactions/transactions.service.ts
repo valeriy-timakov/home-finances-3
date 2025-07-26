@@ -72,11 +72,11 @@ export class TransactionsService {
     };
 
     if (accountId) {
-      whereClause.accountId = accountId;
+      whereClause.accountId = typeof accountId === 'string' ? parseInt(accountId, 10) : accountId;
     }
 
     if (counterpartyId) {
-      whereClause.counterpartyId = counterpartyId;
+      whereClause.counterpartyId = typeof counterpartyId === 'string' ? parseInt(counterpartyId, 10) : counterpartyId;
     }
 
     if (searchText) {

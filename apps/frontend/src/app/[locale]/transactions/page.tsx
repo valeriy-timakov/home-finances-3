@@ -21,6 +21,8 @@ export default function TransactionsPage() {
   const [hashParams, setHashParams] = useState<URLSearchParams | null>(null);
   const [productOptions, setProductOptions] = useState<SelectItem[]>([]);
   const [categoryOptions, setCategoryOptions] = useState<SelectItem[]>([]);
+  const [accountOptions, setAccountOptions] = useState<SelectItem[]>([]);
+  const [counterpartyOptions, setCounterpartyOptions] = useState<SelectItem[]>([]);
   const [filterOptionsLoading, setFilterOptionsLoading] = useState(false);
 
   // Function to fetch transactions with filters
@@ -43,8 +45,18 @@ export default function TransactionsPage() {
       if (filters.dateFrom) params.append('startDate', filters.dateFrom);
       if (filters.dateTo) params.append('endDate', filters.dateTo);
       if (filters.searchText) params.append('searchText', filters.searchText);
-      if (filters.account) params.append('accountId', filters.account);
-      if (filters.counterparty) params.append('counterpartyId', filters.counterparty);
+      
+      // Handle account filter (now array of IDs)
+      if (filters.account && filters.account.length > 0) {
+        // Use the first account ID for now (API currently supports only one)
+        params.append('accountId', filters.account[0]);
+      }
+      
+      // Handle counterparty filter (now array of IDs)
+      if (filters.counterparty && filters.counterparty.length > 0) {
+        // Use the first counterparty ID for now (API currently supports only one)
+        params.append('counterpartyId', filters.counterparty[0]);
+      }
       
       // Add multiple values for category and productName
       if (filters.category && filters.category.length > 0) {
@@ -92,8 +104,8 @@ export default function TransactionsPage() {
         dateTo: '',
         searchText: '',
         category: [],
-        account: '',
-        counterparty: '',
+        account: [],
+        counterparty: [],
         productName: [],
       });
     }
@@ -105,8 +117,8 @@ export default function TransactionsPage() {
     dateTo: hashParams?.get('endDate') || '',
     searchText: hashParams?.get('searchText') || '',
     category: hashParams?.getAll('categoryIds') || [],
-    account: hashParams?.get('accountId') || '',
-    counterparty: hashParams?.get('counterpartyId') || '',
+    account: hashParams?.getAll('accountId') || [],
+    counterparty: hashParams?.getAll('counterpartyId') || [],
     productName: hashParams?.getAll('productNames') || [],
   };
 
@@ -119,8 +131,16 @@ export default function TransactionsPage() {
     if (filters.dateFrom) params.append('startDate', filters.dateFrom);
     if (filters.dateTo) params.append('endDate', filters.dateTo);
     if (filters.searchText) params.append('searchText', filters.searchText);
-    if (filters.account) params.append('accountId', filters.account);
-    if (filters.counterparty) params.append('counterpartyId', filters.counterparty);
+    
+    // Handle account filter (now array of IDs)
+    if (filters.account && filters.account.length > 0) {
+      filters.account.forEach(acc => params.append('accountId', acc));
+    }
+    
+    // Handle counterparty filter (now array of IDs)
+    if (filters.counterparty && filters.counterparty.length > 0) {
+      filters.counterparty.forEach(cp => params.append('counterpartyId', cp));
+    }
     
     // Add multiple values for category and productName
     if (filters.category && filters.category.length > 0) {
@@ -163,8 +183,8 @@ export default function TransactionsPage() {
         dateTo: hashParams.get('endDate') || '',
         searchText: hashParams.get('searchText') || '',
         category: hashParams.getAll('categoryIds') || [],
-        account: hashParams.get('accountId') || '',
-        counterparty: hashParams.get('counterpartyId') || '',
+        account: hashParams.getAll('accountId') || [],
+        counterparty: hashParams.getAll('counterpartyId') || [],
         productName: hashParams.getAll('productNames') || [],
       };
       console.log('Filters from hash:', filters);
@@ -172,7 +192,7 @@ export default function TransactionsPage() {
     }
   }, [status, fetchTransactions, hashParams]);
 
-  // Fetch filter options (products and categories) on page load
+  // Fetch filter options (products, categories, accounts, counterparties) on page load
   useEffect(() => {
     if (status === 'authenticated') {
       const fetchFilterOptions = async () => {
@@ -197,6 +217,26 @@ export default function TransactionsPage() {
           } else {
             console.error('Failed to fetch category options');
           }
+
+          // Fetch account options
+          const accountResponse = await fetch('/api/select_items/accounts');
+          if (accountResponse.ok) {
+            const accountData = await accountResponse.json();
+            setAccountOptions(accountData);
+            console.log('Loaded account options:', accountData.length);
+          } else {
+            console.error('Failed to fetch account options');
+          }
+          
+          // Fetch counterparty options
+          const counterpartyResponse = await fetch('/api/select_items/counterparties');
+          if (counterpartyResponse.ok) {
+            const counterpartyData = await counterpartyResponse.json();
+            setCounterpartyOptions(counterpartyData);
+            console.log('Loaded counterparty options:', counterpartyData.length);
+          } else {
+            console.error('Failed to fetch counterparty options');
+          }
         } catch (error) {
           console.error('Error fetching filter options:', error);
         } finally {
@@ -208,39 +248,33 @@ export default function TransactionsPage() {
     }
   }, [status]);
 
-  // Handle authentication redirect
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push(`/${locale}/login`);
-    }
-  }, [status, locale, router]);
-
-  // Handle filter changes from the ExpensesTable component
-  const handleFilterChange = useCallback((filters: FilterState) => {
-    console.log('handleFilterChange called with:', filters);
+  // Handle filter changes
+  const handleFilterChange = (filters: FilterState) => {
+    console.log('Filter changed:', filters);
     updateHashWithFilters(filters);
-  }, [updateHashWithFilters]);
+    fetchTransactions(filters);
+  };
 
-  if (status === 'loading' || loading || filterOptionsLoading) {
-    return <div>{t('loading')}</div>;
+  // Redirect to login if not authenticated
+  if (status === 'unauthenticated') {
+    router.push('/api/auth/signin');
+    return null;
   }
 
-  if (status === 'authenticated') {
-    return (
-      <div>
-        <h1>{t('title')}</h1>
-        <ExpensesTable 
-          data={transactions} 
-          onFilterChange={handleFilterChange} 
-          loading={loading}
-          currentFilters={currentFilters}
-          productOptions={productOptions}
-          categoryOptions={categoryOptions}
-          filterOptionsLoading={filterOptionsLoading}
-        />
-      </div>
-    );
-  }
-
-  return null;
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">{t('title')}</h1>
+      <ExpensesTable 
+        data={transactions} 
+        onFilterChange={handleFilterChange} 
+        loading={loading} 
+        currentFilters={currentFilters} 
+        productOptions={productOptions}
+        categoryOptions={categoryOptions}
+        accountOptions={accountOptions}
+        counterpartyOptions={counterpartyOptions}
+        filterOptionsLoading={filterOptionsLoading}
+      />
+    </div>
+  );
 }

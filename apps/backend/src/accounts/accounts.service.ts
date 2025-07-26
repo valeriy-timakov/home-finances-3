@@ -32,4 +32,48 @@ export class AccountsService {
       },
     }));
   }
+
+  async findSelectItems(agentId: number) {
+    const accounts = await this.prisma.account.findMany({
+      where: {
+        agentId,
+        type: 'OWN', // Only own accounts
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    // Return in unified format { id, label }
+    return accounts.map(account => ({
+      id: account.id,
+      label: account.name,
+    }));
+  }
+
+  async findCounterpartySelectItems(agentId: number) {
+    const counterparties = await this.prisma.account.findMany({
+      where: {
+        agentId,
+        type: 'COUNTERPARTY', // Only counterparty accounts
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    // Return in unified format { id, label }
+    return counterparties.map(counterparty => ({
+      id: counterparty.id,
+      label: counterparty.name,
+    }));
+  }
 }

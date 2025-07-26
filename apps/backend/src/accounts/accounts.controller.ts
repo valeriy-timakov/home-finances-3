@@ -11,4 +11,16 @@ export class AccountsController {
   findAll(@Req() req) {
     return this.accountsService.findAll(req.user.agentId);
   }
+
+  @Get('select-items')
+  @UseGuards(AuthGuard('bearer'))
+  findSelectItems(@Req() req) {
+    return this.accountsService.findSelectItems(req.user.agentId);
+  }
+
+  @Get('counterparties/select-items')
+  @UseGuards(AuthGuard('bearer'))
+  findCounterpartySelectItems(@Req() req) {
+    return this.accountsService.findCounterpartySelectItems(req.user.agentId);
+  }
 }

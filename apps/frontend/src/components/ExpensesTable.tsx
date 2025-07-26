@@ -27,8 +27,8 @@ type FilterState = {
   dateTo: string;
   searchText: string;
   category: string[]; // Category IDs as strings
-  account: string;
-  counterparty: string;
+  account: string[];  // Account IDs as strings
+  counterparty: string[]; // Counterparty IDs as strings
   productName: string[];
 };
 
@@ -42,6 +42,8 @@ type ExpensesTableProps = {
   currentFilters: FilterState;
   productOptions: SelectItem[];
   categoryOptions: SelectItem[];
+  accountOptions: SelectItem[];
+  counterpartyOptions: SelectItem[];
   filterOptionsLoading?: boolean;
 };
 
@@ -52,27 +54,12 @@ export default function ExpensesTable({
   currentFilters,
   productOptions,
   categoryOptions,
+  accountOptions,
+  counterpartyOptions,
   filterOptionsLoading = false
 }: ExpensesTableProps) {
   const t = useTranslations('ExpensesTable');
   const locale = useLocale();
-  
-  // Extract unique values for filter dropdowns (only for accounts and counterparties)
-  const uniqueAccounts = useMemo(() => {
-    const accounts = new Set<string>();
-    data.forEach(transaction => {
-      accounts.add(transaction.account.name);
-    });
-    return Array.from(accounts).sort();
-  }, [data]);
-  
-  const uniqueCounterparties = useMemo(() => {
-    const counterparties = new Set<string>();
-    data.forEach(transaction => {
-      counterparties.add(transaction.counterparty.name);
-    });
-    return Array.from(counterparties).sort();
-  }, [data]);
   
   // Handle filter changes
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -123,6 +110,30 @@ export default function ExpensesTable({
     }
   };
 
+  // Handle account change
+  const handleAccountChange = (selectedIds: number[]) => {
+    const updatedFilters = { 
+      ...currentFilters, 
+      account: selectedIds.map(id => id.toString()) 
+    };
+    
+    if (onFilterChange) {
+      onFilterChange(updatedFilters);
+    }
+  };
+
+  // Handle counterparty change
+  const handleCounterpartyChange = (selectedIds: number[]) => {
+    const updatedFilters = { 
+      ...currentFilters, 
+      counterparty: selectedIds.map(id => id.toString()) 
+    };
+    
+    if (onFilterChange) {
+      onFilterChange(updatedFilters);
+    }
+  };
+
   // Apply filters to data
   const filteredData = useMemo(() => {
     // No longer filtering data on the frontend
@@ -130,8 +141,16 @@ export default function ExpensesTable({
     return data;
   }, [data]);
 
-  // Convert string IDs back to numbers for the category dropdown
+  // Convert string IDs back to numbers for the dropdowns
   const selectedCategoryIds = currentFilters.category
+    .map(id => parseInt(id))
+    .filter(id => !isNaN(id));
+
+  const selectedAccountIds = currentFilters.account
+    .map(id => parseInt(id))
+    .filter(id => !isNaN(id));
+
+  const selectedCounterpartyIds = currentFilters.counterparty
     .map(id => parseInt(id))
     .filter(id => !isNaN(id));
 
@@ -186,45 +205,33 @@ export default function ExpensesTable({
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           />
         </div>
-        {/* Account filter */}
+        {/* Account filter - universal select dropdown */}
         <div>
           <label htmlFor="account" className="block text-sm font-medium text-gray-700">
             {t('account')}
           </label>
-          <select
-            id="account"
-            name="account"
-            value={currentFilters.account}
-            onChange={handleFilterChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-          >
-            <option value="">{t('all')}</option>
-            {uniqueAccounts.map((account) => (
-              <option key={account} value={account}>
-                {account}
-              </option>
-            ))}
-          </select>
+          <UniversalSelectDropdown
+            items={accountOptions}
+            selectedIds={selectedAccountIds}
+            onChange={handleAccountChange}
+            placeholder={t('all')}
+            disabled={filterOptionsLoading}
+            className="mt-1"
+          />
         </div>
-        {/* Counterparty filter */}
+        {/* Counterparty filter - universal select dropdown */}
         <div>
           <label htmlFor="counterparty" className="block text-sm font-medium text-gray-700">
             {t('counterparty')}
           </label>
-          <select
-            id="counterparty"
-            name="counterparty"
-            value={currentFilters.counterparty}
-            onChange={handleFilterChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-          >
-            <option value="">{t('all')}</option>
-            {uniqueCounterparties.map((counterparty) => (
-              <option key={counterparty} value={counterparty}>
-                {counterparty}
-              </option>
-            ))}
-          </select>
+          <UniversalSelectDropdown
+            items={counterpartyOptions}
+            selectedIds={selectedCounterpartyIds}
+            onChange={handleCounterpartyChange}
+            placeholder={t('all')}
+            disabled={filterOptionsLoading}
+            className="mt-1"
+          />
         </div>
         {/* Category filter - universal select dropdown */}
         <div>
