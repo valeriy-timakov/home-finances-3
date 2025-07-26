@@ -35,7 +35,7 @@ type FilterState = {
 // Export FilterState type for use in other components
 export type { FilterState };
 
-type ExpensesTableProps = {
+type TransactionsDetailsTableProps = {
   data: TransactionDto[];
   onFilterChange?: (filters: FilterState) => void;
   loading?: boolean;
@@ -47,7 +47,7 @@ type ExpensesTableProps = {
   filterOptionsLoading?: boolean;
 };
 
-export default function ExpensesTable({ 
+export default function TransactionsDetailsTable({ 
   data, 
   onFilterChange, 
   loading = false, 
@@ -57,7 +57,7 @@ export default function ExpensesTable({
   accountOptions,
   counterpartyOptions,
   filterOptionsLoading = false
-}: ExpensesTableProps) {
+}: TransactionsDetailsTableProps) {
   const t = useTranslations('ExpensesTable');
   const locale = useLocale();
   
