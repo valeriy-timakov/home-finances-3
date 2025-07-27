@@ -13,23 +13,29 @@ export default function CategoriesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/categories');
+      if (!res.ok) {
+        throw new Error(t('loadingError'));
+      }
+      const data = await res.json();
+      setCategories(data);
+    } catch (e: any) {
+      setError(e.message || t('errorOccurred'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       redirect('/');
     }
 
     if (status === 'authenticated') {
-      setLoading(true);
-      fetch('/api/categories')
-        .then(res => {
-          if (!res.ok) {
-            return Promise.reject(t('loadingError'));
-          }
-          return res.json();
-        })
-        .then(setCategories)
-        .catch(e => setError(e.message || t('errorOccurred')))
-        .finally(() => setLoading(false));
+      fetchCategories();
     }
   }, [status, t]);
 
@@ -45,7 +51,10 @@ export default function CategoriesPage() {
     <div>
       <h2>{t('title')}</h2>
       {error && <div style={{ color: 'red' }}>{error}</div>}
-      <CategoryTree data={categories} />
+      <CategoryTree 
+        data={categories} 
+        onCategoriesChange={fetchCategories} 
+      />
     </div>
   );
 }

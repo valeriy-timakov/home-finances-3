@@ -210,6 +210,10 @@ export class TransactionsService {
     let filteredByAmountTransactions = transactions;
     
     if (minAmount !== undefined || maxAmount !== undefined) {
+      console.log('Filtering by amount with partFraction:');
+      console.log('minAmount:', minAmount);
+      console.log('maxAmount:', maxAmount);
+      
       filteredByAmountTransactions = transactions.filter(transaction => {
         const partFraction = transaction.account.currency.partFraction;
         const absoluteAmount = Math.abs(transaction.amount);
@@ -217,20 +221,26 @@ export class TransactionsService {
         // Конвертуємо суму з урахуванням partFraction
         const absoluteAmountAdjusted = absoluteAmount / partFraction;
         
+        console.log(`Transaction ${transaction.id}: amount=${transaction.amount}, partFraction=${partFraction}, adjusted=${absoluteAmountAdjusted}`);
+        
         let passesMinFilter = true;
         let passesMaxFilter = true;
         
         if (minAmount !== undefined) {
           const minAmountNumber = typeof minAmount === 'string' ? parseFloat(minAmount) : minAmount;
           passesMinFilter = absoluteAmountAdjusted >= minAmountNumber;
+          console.log(`Min filter: ${absoluteAmountAdjusted} >= ${minAmountNumber} = ${passesMinFilter}`);
         }
         
         if (maxAmount !== undefined) {
           const maxAmountNumber = typeof maxAmount === 'string' ? parseFloat(maxAmount) : maxAmount;
           passesMaxFilter = absoluteAmountAdjusted <= maxAmountNumber;
+          console.log(`Max filter: ${absoluteAmountAdjusted} <= ${maxAmountNumber} = ${passesMaxFilter}`);
         }
         
-        return passesMinFilter && passesMaxFilter;
+        const passes = passesMinFilter && passesMaxFilter;
+        console.log(`Transaction ${transaction.id} passes: ${passes}`);
+        return passes;
       });
     }
 
