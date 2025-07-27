@@ -45,6 +45,8 @@ export default function TransactionsDetailsPage() {
       if (filters.dateFrom) params.append('startDate', filters.dateFrom);
       if (filters.dateTo) params.append('endDate', filters.dateTo);
       if (filters.searchText) params.append('searchText', filters.searchText);
+      if (filters.minAmount) params.append('minAmount', filters.minAmount);
+      if (filters.maxAmount) params.append('maxAmount', filters.maxAmount);
       
       // Handle account filter (now array of IDs)
       if (filters.account && filters.account.length > 0) {
@@ -107,6 +109,8 @@ export default function TransactionsDetailsPage() {
         account: [],
         counterparty: [],
         productName: [],
+        minAmount: '',
+        maxAmount: '',
       });
     }
   }, [status, fetchTransactions]);
@@ -120,6 +124,8 @@ export default function TransactionsDetailsPage() {
     account: hashParams?.getAll('accountId') || [],
     counterparty: hashParams?.getAll('counterpartyId') || [],
     productName: hashParams?.getAll('productNames') || [],
+    minAmount: hashParams?.get('minAmount') || '',
+    maxAmount: hashParams?.get('maxAmount') || '',
   };
 
   // Function to update hash with filter parameters
@@ -131,6 +137,8 @@ export default function TransactionsDetailsPage() {
     if (filters.dateFrom) params.append('startDate', filters.dateFrom);
     if (filters.dateTo) params.append('endDate', filters.dateTo);
     if (filters.searchText) params.append('searchText', filters.searchText);
+    if (filters.minAmount) params.append('minAmount', filters.minAmount);
+    if (filters.maxAmount) params.append('maxAmount', filters.maxAmount);
     
     // Handle account filter (now array of IDs)
     if (filters.account && filters.account.length > 0) {
@@ -186,6 +194,8 @@ export default function TransactionsDetailsPage() {
         account: hashParams.getAll('accountId') || [],
         counterparty: hashParams.getAll('counterpartyId') || [],
         productName: hashParams.getAll('productNames') || [],
+        minAmount: hashParams.get('minAmount') || '',
+        maxAmount: hashParams.get('maxAmount') || '',
       };
       console.log('Filters from hash:', filters);
       fetchTransactions(filters);

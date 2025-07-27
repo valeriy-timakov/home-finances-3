@@ -55,6 +55,26 @@ export class QueryTransactionDto {
   searchText?: string;
 
   @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Transform(({ value }) => {
+    if (value === null || value === undefined || value === '') return undefined;
+    const parsed = typeof value === 'string' ? parseInt(value, 10) : value;
+    return isNaN(parsed) ? undefined : parsed;
+  })
+  minAmount?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Transform(({ value }) => {
+    if (value === null || value === undefined || value === '') return undefined;
+    const parsed = typeof value === 'string' ? parseInt(value, 10) : value;
+    return isNaN(parsed) ? undefined : parsed;
+  })
+  maxAmount?: number;
+
+  @IsOptional()
   @IsDateString()
   @Transform(({ value }) => {
     if (!value) return undefined;

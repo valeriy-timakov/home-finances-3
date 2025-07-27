@@ -65,7 +65,7 @@ export class TransactionsService {
   }
 
   async findAll(query: QueryTransactionDto, agentId: number) {
-    const { accountId, categoryIds, productNames, startDate, endDate, counterpartyId, searchText } = query;
+    const { accountId, categoryIds, productNames, startDate, endDate, counterpartyId, searchText, minAmount, maxAmount } = query;
 
     const whereClause: any = {
       agentId,
@@ -126,7 +126,7 @@ export class TransactionsService {
         }
       }
     }
-
+    
     // Фільтрація за вкладеними сутностями
     const nestedFilters: any = {};
 
@@ -206,8 +206,36 @@ export class TransactionsService {
       },
     });
 
+    // Застосовуємо фільтрацію за сумою з урахуванням partFraction після отримання даних
+    let filteredByAmountTransactions = transactions;
+    
+    if (minAmount !== undefined || maxAmount !== undefined) {
+      filteredByAmountTransactions = transactions.filter(transaction => {
+        const partFraction = transaction.account.currency.partFraction;
+        const absoluteAmount = Math.abs(transaction.amount);
+        
+        // Конвертуємо суму з урахуванням partFraction
+        const absoluteAmountAdjusted = absoluteAmount / partFraction;
+        
+        let passesMinFilter = true;
+        let passesMaxFilter = true;
+        
+        if (minAmount !== undefined) {
+          const minAmountNumber = typeof minAmount === 'string' ? parseFloat(minAmount) : minAmount;
+          passesMinFilter = absoluteAmountAdjusted >= minAmountNumber;
+        }
+        
+        if (maxAmount !== undefined) {
+          const maxAmountNumber = typeof maxAmount === 'string' ? parseFloat(maxAmount) : maxAmount;
+          passesMaxFilter = absoluteAmountAdjusted <= maxAmountNumber;
+        }
+        
+        return passesMinFilter && passesMaxFilter;
+      });
+    }
+
     // Post-process transactions to filter details based on criteria
-    const filteredTransactions = transactions.map(transaction => {
+    const filteredTransactions = filteredByAmountTransactions.map(transaction => {
       // Create a copy of the transaction to avoid modifying the original
       const filteredTransaction = { ...transaction };
       

@@ -53,6 +53,9 @@
     "amount": "Amount",
     "dateFrom": "From date",
     "dateTo": "To date",
+    "minAmount": "Minimum amount",
+    "maxAmount": "Maximum amount",
+    "clearAmountFilters": "Clear",
     "search": "Search",
     "searchPlaceholder": "Search by transaction name",
     "all": "All",
@@ -95,7 +98,12 @@
     "searchPlaceholder": "Search by transaction name",
     "account": "Account",
     "counterparty": "Counterparty",
-    "all": "All"
+    "all": "All",
+    "minAmount": "Minimum amount",
+    "maxAmount": "Maximum amount",
+    "dateFrom": "From date",
+    "dateTo": "To date",
+    "clearAmountFilters": "Clear"
   },
   "LocaleSwitcher": {
     "changeLocale": "Change language"

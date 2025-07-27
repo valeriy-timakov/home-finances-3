@@ -65,7 +65,7 @@ export class TransactionsService {
   }
 
   async findAll(query: QueryTransactionsDetailsDto, agentId: number) {
-    const { accountId, categoryIds, productNames, startDate, endDate, counterpartyId, searchText } = query;
+    const { accountId, categoryIds, productNames, startDate, endDate, counterpartyId, searchText, minAmount, maxAmount } = query;
 
     const whereClause: any = {
       agentId,
@@ -124,6 +124,23 @@ export class TransactionsService {
           // If it's already a Date object, just convert to ISO string
           whereClause.date.lte = endDate.toISOString();
         }
+      }
+    }
+    
+    // Filter by amount range
+    if (minAmount !== undefined || maxAmount !== undefined) {
+      whereClause.amount = {};
+      
+      if (minAmount !== undefined) {
+        // Ensure minAmount is a number
+        const minAmountNumber = typeof minAmount === 'string' ? parseInt(minAmount, 10) : minAmount;
+        whereClause.amount.gte = minAmountNumber;
+      }
+      
+      if (maxAmount !== undefined) {
+        // Ensure maxAmount is a number
+        const maxAmountNumber = typeof maxAmount === 'string' ? parseInt(maxAmount, 10) : maxAmount;
+        whereClause.amount.lte = maxAmountNumber;
       }
     }
 

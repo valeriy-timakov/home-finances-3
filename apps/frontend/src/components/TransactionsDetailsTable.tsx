@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { TransactionDto } from '../types/transactions';
 import { SelectItem } from '../types/select-items';
@@ -30,6 +30,8 @@ type FilterState = {
   account: string[];  // Account IDs as strings
   counterparty: string[]; // Counterparty IDs as strings
   productName: string[];
+  minAmount: string;
+  maxAmount: string;
 };
 
 // Export FilterState type for use in other components
@@ -61,9 +63,24 @@ export default function TransactionsDetailsTable({
   const t = useTranslations('ExpensesTable');
   const locale = useLocale();
   
+  // Local state for amount filters
+  const [tempMinAmount, setTempMinAmount] = useState(currentFilters.minAmount);
+  const [tempMaxAmount, setTempMaxAmount] = useState(currentFilters.maxAmount);
+  
+  // Update local state when currentFilters change (e.g., from URL)
+  useEffect(() => {
+    setTempMinAmount(currentFilters.minAmount);
+    setTempMaxAmount(currentFilters.maxAmount);
+  }, [currentFilters.minAmount, currentFilters.maxAmount]);
+  
   // Handle filter changes
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    
+    // Skip immediate update for amount filters
+    if (name === 'minAmount' || name === 'maxAmount') {
+      return;
+    }
     
     let updatedFilters: FilterState;
     
@@ -75,6 +92,83 @@ export default function TransactionsDetailsTable({
     } else {
       updatedFilters = { ...currentFilters, [name]: value };
     }
+    
+    if (onFilterChange) {
+      onFilterChange(updatedFilters);
+    }
+  };
+  
+  // Handle amount input changes (update local state only)
+  const handleAmountInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    
+    if (name === 'minAmount') {
+      setTempMinAmount(value);
+    } else if (name === 'maxAmount') {
+      setTempMaxAmount(value);
+    }
+  };
+  
+  // Handle amount input blur (update filters when editing is complete)
+  const handleAmountInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name } = e.target;
+    const updatedFilters = { ...currentFilters };
+    
+    if (name === 'minAmount') {
+      updatedFilters.minAmount = tempMinAmount;
+    } else if (name === 'maxAmount') {
+      updatedFilters.maxAmount = tempMaxAmount;
+    }
+    
+    if (onFilterChange) {
+      onFilterChange(updatedFilters);
+    }
+  };
+  
+  // Handle amount input key press (update on Enter key)
+  const handleAmountInputKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const { name } = e.currentTarget;
+      const updatedFilters = { ...currentFilters };
+      
+      if (name === 'minAmount') {
+        updatedFilters.minAmount = tempMinAmount;
+      } else if (name === 'maxAmount') {
+        updatedFilters.maxAmount = tempMaxAmount;
+      }
+      
+      if (onFilterChange) {
+        onFilterChange(updatedFilters);
+      }
+    }
+  };
+  
+  // Handle clearing min amount filter
+  const handleClearMinAmount = () => {
+    // Clear local state
+    setTempMinAmount('');
+    
+    // Update filters
+    const updatedFilters = { 
+      ...currentFilters,
+      minAmount: ''
+    };
+    
+    if (onFilterChange) {
+      onFilterChange(updatedFilters);
+    }
+  };
+  
+  // Handle clearing max amount filter
+  const handleClearMaxAmount = () => {
+    // Clear local state
+    setTempMaxAmount('');
+    
+    // Update filters
+    const updatedFilters = { 
+      ...currentFilters,
+      maxAmount: ''
+    };
     
     if (onFilterChange) {
       onFilterChange(updatedFilters);
@@ -204,6 +298,65 @@ export default function TransactionsDetailsTable({
             placeholder={t('searchPlaceholder')}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           />
+        </div>
+        {/* Amount filters */}
+        <div>
+          <label htmlFor="minAmount" className="block text-sm font-medium text-gray-700">
+            {t('minAmount')}
+          </label>
+          <div className="relative">
+            <input
+              type="number"
+              id="minAmount"
+              name="minAmount"
+              value={tempMinAmount}
+              onChange={handleAmountInputChange}
+              onBlur={handleAmountInputBlur}
+              onKeyPress={handleAmountInputKeyPress}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            />
+            {tempMinAmount && (
+              <button
+                type="button"
+                onClick={handleClearMinAmount}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                style={{ top: '4px' }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+        <div>
+          <label htmlFor="maxAmount" className="block text-sm font-medium text-gray-700">
+            {t('maxAmount')}
+          </label>
+          <div className="relative">
+            <input
+              type="number"
+              id="maxAmount"
+              name="maxAmount"
+              value={tempMaxAmount}
+              onChange={handleAmountInputChange}
+              onBlur={handleAmountInputBlur}
+              onKeyPress={handleAmountInputKeyPress}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            />
+            {tempMaxAmount && (
+              <button
+                type="button"
+                onClick={handleClearMaxAmount}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                style={{ top: '4px' }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
         {/* Account filter - universal select dropdown */}
         <div>

@@ -53,6 +53,9 @@
     "amount": "Сума",
     "dateFrom": "З дати",
     "dateTo": "По дату",
+    "minAmount": "Мінімальна сума",
+    "maxAmount": "Максимальна сума",
+    "clearAmountFilters": "Очистити",
     "search": "Пошук",
     "searchPlaceholder": "Пошук за назвою транзакції",
     "all": "Всі",
@@ -98,6 +101,9 @@
     "all": "Всі",
     "dateFrom": "З дати",
     "dateTo": "По дату",
+    "minAmount": "Мінімальна сума",
+    "maxAmount": "Максимальна сума",
+    "clearAmountFilters": "Очистити",
     "multiSelectHint": "Можна вибрати декілька значень"
   },
   "LocaleSwitcher": {

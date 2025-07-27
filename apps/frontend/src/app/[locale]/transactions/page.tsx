@@ -13,14 +13,10 @@ export default function TransactionsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const t = useTranslations('TransactionsPage');
-  const locale = useLocale();
-  const searchParams = useSearchParams();
   
   const [transactions, setTransactions] = useState<TransactionDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [hashParams, setHashParams] = useState<URLSearchParams | null>(null);
-  const [productOptions, setProductOptions] = useState<SelectItem[]>([]);
-  const [categoryOptions, setCategoryOptions] = useState<SelectItem[]>([]);
   const [accountOptions, setAccountOptions] = useState<SelectItem[]>([]);
   const [counterpartyOptions, setCounterpartyOptions] = useState<SelectItem[]>([]);
   const [filterOptionsLoading, setFilterOptionsLoading] = useState(false);
@@ -45,6 +41,8 @@ export default function TransactionsPage() {
       if (filters.dateFrom) params.append('startDate', filters.dateFrom);
       if (filters.dateTo) params.append('endDate', filters.dateTo);
       if (filters.searchText) params.append('searchText', filters.searchText);
+      if (filters.minAmount) params.append('minAmount', filters.minAmount);
+      if (filters.maxAmount) params.append('maxAmount', filters.maxAmount);
       
       // Handle account filter (now array of IDs)
       if (filters.account && filters.account.length > 0) {
@@ -107,6 +105,8 @@ export default function TransactionsPage() {
         account: [],
         counterparty: [],
         productName: [],
+        minAmount: '',
+        maxAmount: '',
       });
     }
   }, [status, fetchTransactions]);
@@ -120,6 +120,8 @@ export default function TransactionsPage() {
     account: hashParams?.getAll('accountId') || [],
     counterparty: hashParams?.getAll('counterpartyId') || [],
     productName: hashParams?.getAll('productNames') || [],
+    minAmount: hashParams?.get('minAmount') || '',
+    maxAmount: hashParams?.get('maxAmount') || '',
   };
 
   // Function to update hash with filter parameters
@@ -131,6 +133,8 @@ export default function TransactionsPage() {
     if (filters.dateFrom) params.append('startDate', filters.dateFrom);
     if (filters.dateTo) params.append('endDate', filters.dateTo);
     if (filters.searchText) params.append('searchText', filters.searchText);
+    if (filters.minAmount) params.append('minAmount', filters.minAmount);
+    if (filters.maxAmount) params.append('maxAmount', filters.maxAmount);
     
     // Handle account filter (now array of IDs)
     if (filters.account && filters.account.length > 0) {
@@ -186,6 +190,8 @@ export default function TransactionsPage() {
         account: hashParams.getAll('accountId') || [],
         counterparty: hashParams.getAll('counterpartyId') || [],
         productName: hashParams.getAll('productNames') || [],
+        minAmount: hashParams.get('minAmount') || '',
+        maxAmount: hashParams.get('maxAmount') || '',
       };
       console.log('Filters from hash:', filters);
       fetchTransactions(filters);
@@ -198,26 +204,6 @@ export default function TransactionsPage() {
       const fetchFilterOptions = async () => {
         setFilterOptionsLoading(true);
         try {
-          // Fetch product options
-          const productResponse = await fetch('/api/select_items/products');
-          if (productResponse.ok) {
-            const productData = await productResponse.json();
-            setProductOptions(productData);
-            console.log('Loaded product options:', productData.length);
-          } else {
-            console.error('Failed to fetch product options');
-          }
-          
-          // Fetch category options
-          const categoryResponse = await fetch('/api/select_items/categories');
-          if (categoryResponse.ok) {
-            const categoryData = await categoryResponse.json();
-            setCategoryOptions(categoryData);
-            console.log('Loaded category options:', categoryData.length);
-          } else {
-            console.error('Failed to fetch category options');
-          }
-
           // Fetch account options
           const accountResponse = await fetch('/api/select_items/accounts');
           if (accountResponse.ok) {
@@ -268,9 +254,7 @@ export default function TransactionsPage() {
         data={transactions} 
         onFilterChange={handleFilterChange} 
         loading={loading} 
-        currentFilters={currentFilters} 
-        productOptions={productOptions}
-        categoryOptions={categoryOptions}
+        currentFilters={currentFilters}
         accountOptions={accountOptions}
         counterpartyOptions={counterpartyOptions}
         filterOptionsLoading={filterOptionsLoading}
