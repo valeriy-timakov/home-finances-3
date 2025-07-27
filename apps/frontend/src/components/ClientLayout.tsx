@@ -39,8 +39,14 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
       <header className="flex items-center justify-between px-8 py-3 bg-paper border-b border-border sticky top-0 z-10">
         <nav className="flex items-center gap-6">
           <Link
-            href="/transactions"
-            className="font-medium text-primary hover:text-primary-dark no-underline"
+              href="/transactions_details"
+              className="font-medium text-primary hover:text-primary-dark no-underline"
+          >
+            {t('transactionsDetailsLink')}
+          </Link>
+          <Link
+              href="/transactions"
+              className="font-medium text-primary hover:text-primary-dark no-underline"
           >
             {t('transactionsLink')}
           </Link>

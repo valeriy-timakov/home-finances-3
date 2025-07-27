@@ -51,6 +51,7 @@
     "loading": "Loading...",
     "defaultUsername": "User",
     "transactionsLink": "Transactions",
+    "transactionsDetailsLink": "Transactions details",
     "accountsLink": "Accounts",
     "categoriesLink": "Categories",
     "signOutButton": "Sign Out"

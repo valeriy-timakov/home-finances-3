@@ -51,6 +51,7 @@
     "loading": "Завантаження...",
     "defaultUsername": "Користувач",
     "transactionsLink": "Транзакції",
+    "transactionsDetailsLink": "Деталі транзакцій",
     "accountsLink": "Рахунки",
     "categoriesLink": "Категорії",
     "signOutButton": "Вийти"

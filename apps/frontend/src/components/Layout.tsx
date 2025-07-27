@@ -26,6 +26,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       }}>
         <nav style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
           <Link href="/transactions" style={{ fontWeight: 500, color: '#222', textDecoration: 'none' }}>Транзакції</Link>
+          <Link href="/transactions_details" style={{ fontWeight: 500, color: '#222', textDecoration: 'none' }}>Деталі транзакцій</Link>
           <Link href="/accounts" style={{ fontWeight: 500, color: '#222', textDecoration: 'none' }}>Рахунки</Link>
           <Link href="/categories" style={{ fontWeight: 500, color: '#222', textDecoration: 'none' }}>Категорії</Link>
         </nav>
