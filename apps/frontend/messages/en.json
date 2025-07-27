@@ -43,6 +43,26 @@
     "errorOccurred": "An error occurred",
     "loading": "Loading..."
   },
+  "TransactionsTable": {
+    "date": "Date",
+    "type": "Type",
+    "name": "Name",
+    "account": "Account",
+    "counterparty": "Counterparty",
+    "description": "Description",
+    "amount": "Amount",
+    "dateFrom": "From date",
+    "dateTo": "To date",
+    "search": "Search",
+    "searchPlaceholder": "Search by transaction name",
+    "all": "All",
+    "noTransactions": "No transactions found",
+    "transactionType": {
+      "transfer": "Transfer",
+      "expense": "Expense",
+      "income": "Income"
+    }
+  },
   "AccountsTable": {
     "accountName": "Account Name",
     "description": "Description"

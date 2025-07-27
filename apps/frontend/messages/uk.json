@@ -43,6 +43,26 @@
     "errorOccurred": "Сталася помилка",
     "loading": "Завантаження..."
   },
+  "TransactionsTable": {
+    "date": "Дата",
+    "type": "Тип",
+    "name": "Найменування",
+    "account": "Рахунок",
+    "counterparty": "Контрагент",
+    "description": "Опис",
+    "amount": "Сума",
+    "dateFrom": "З дати",
+    "dateTo": "По дату",
+    "search": "Пошук",
+    "searchPlaceholder": "Пошук за назвою транзакції",
+    "all": "Всі",
+    "noTransactions": "Транзакції не знайдено",
+    "transactionType": {
+      "transfer": "Переказ",
+      "expense": "Витрати",
+      "income": "Дохід"
+    }
+  },
   "AccountsTable": {
     "accountName": "Найменування рахунку",
     "description": "Опис"

@@ -4,8 +4,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import TransactionsDetailsTable from '../../../components/TransactionsDetailsTable';
-import { FilterState } from '../../../components/TransactionsDetailsTable';
+import TransactionsTable from '../../../components/TransactionsTable';
+import { FilterState } from '../../../components/TransactionsTable';
 import { TransactionDto } from '../../../types/transactions';
 import { SelectItem } from '../../../types/select-items';
 
@@ -264,7 +264,7 @@ export default function TransactionsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">{t('title')}</h1>
-      <TransactionsDetailsTable 
+      <TransactionsTable 
         data={transactions} 
         onFilterChange={handleFilterChange} 
         loading={loading} 

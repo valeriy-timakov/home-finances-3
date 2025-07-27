@@ -47,5 +47,6 @@ export interface TransactionDto {
   account: AccountDto;
   counterparty: AccountDto;
   agentId: number;
+  transferLinkedTransactionId?: number;
   details?: TransactionDetailDto[];
 }

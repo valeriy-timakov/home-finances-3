@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { TransactionsDetailsModule } from './transactions_details/transactions_details.module';
+import { TransactionsModule } from './transactions/transactions.module';
 import { AccountsModule } from './accounts/accounts.module';
 import { CategoriesModule } from './categories/categories.module';
 import { AuthModule } from './auth/auth.module';
@@ -26,6 +27,7 @@ import { AcceptLanguageResolver, I18nModule, QueryResolver } from 'nestjs-i18n';
       ],
     }),
     PrismaModule,
+    TransactionsModule,
     TransactionsDetailsModule,
     AccountsModule,
     CategoriesModule,
