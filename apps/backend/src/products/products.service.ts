@@ -43,20 +43,49 @@ export class ProductsService {
 
   async findProductsNotInCategory(agentId: number, categoryId?: number) {
     // Отримати всі продукти з agentId, що НЕ належать до вказаної категорії
-    return this.prisma.productOrService.findMany({
-      where: {
-        agentId,
-        NOT: {
-          categoryId: categoryId || null,
+    const targetCategoryId = categoryId || null;
+    
+    // Використовуємо різні запити в залежності від того, чи цільова категорія є null
+    let res;
+    
+    if (targetCategoryId === null) {
+      // Якщо шукаємо продукти не в null категорії, повертаємо всі з НЕ null категорією
+      res = await this.prisma.productOrService.findMany({
+        where: {
+          agentId,
+          categoryId: {
+            not: null,
+          },
         },
-      },
-      select: {
-        id: true,
-        name: true,
-        categoryId: true,
-      },
-      orderBy: { name: 'asc' },
-    });
+        select: {
+          id: true,
+          name: true,
+          categoryId: true,
+        },
+        orderBy: { name: 'asc' },
+      });
+    } else {
+      // Якщо шукаємо продукти не в конкретній категорії, повертаємо всі з іншою або null категорією
+      res = await this.prisma.productOrService.findMany({
+        where: {
+          agentId,
+          OR: [
+            { categoryId: null },
+            { categoryId: { not: targetCategoryId } },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          categoryId: true,
+        },
+        orderBy: { name: 'asc' },
+      });
+    }
+
+    console.log('NOT IN CATEGORY products:', categoryId, res);
+
+    return res;
   }
 
   async moveProductsToCategory(agentId: number, sourceCategoryId: number, targetCategoryId: number | null) {
