@@ -17,6 +17,7 @@ interface CategoryNode {
 interface CategoryTreeProps {
   data: CategoryNode[];
   onCategoriesChange?: () => void;
+  onSelectCategory?: (categoryId: number | null) => void;
 }
 
 interface TreeNodeData extends DataNode {
@@ -27,7 +28,7 @@ interface TreeNodeData extends DataNode {
   isEditing?: boolean;
 }
 
-export default function CategoryTree({ data, onCategoriesChange }: CategoryTreeProps) {
+export default function CategoryTree({ data, onCategoriesChange, onSelectCategory }: CategoryTreeProps) {
   const t = useTranslations('CategoriesPage');
   const [treeData, setTreeData] = useState<TreeNodeData[]>([]);
   const [selectedNode, setSelectedNode] = useState<TreeNodeData | null>(null);
@@ -36,10 +37,12 @@ export default function CategoryTree({ data, onCategoriesChange }: CategoryTreeP
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [isDragConfirmModalVisible, setIsDragConfirmModalVisible] = useState(false);
+  const [isMoveProductsModalVisible, setIsMoveProductsModalVisible] = useState(false);
   const [isErrorModalVisible, setIsErrorModalVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [dragInfo, setDragInfo] = useState<{ dragNode: any; dropNode: any; dropPosition: number } | null>(null);
   const [form] = Form.useForm();
+  const [moveProductsForm] = Form.useForm();
   const [editingNodeKey, setEditingNodeKey] = useState<string | number | null>(null);
   const [editingNodeValue, setEditingNodeValue] = useState('');
   const [expandedKeys, setExpandedKeys] = useState<(string | number)[]>([]);
@@ -386,6 +389,51 @@ export default function CategoryTree({ data, onCategoriesChange }: CategoryTreeP
     setExpandedKeys(expandedKeysValue);
   };
 
+  // Handle select
+  const onSelect = (selectedKeys: React.Key[], info: any) => {
+    if (selectedKeys.length > 0) {
+      const selectedKey = selectedKeys[0];
+      setSelectedNode(findNodeByKey(selectedKey));
+      onSelectCategory?.(Number(selectedKey));
+    } else {
+      setSelectedNode(null);
+      onSelectCategory?.(null);
+    }
+  };
+
+  // Handle move products
+  const handleMoveProducts = async (values: { targetCategoryId: number | null }) => {
+    if (!selectedNode) return;
+    
+    try {
+      const response = await fetch(`/api/products/move-category`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sourceCategoryId: selectedNode.key,
+          targetCategoryId: values.targetCategoryId || null,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to move products');
+      }
+      
+      message.success(t('productsMoved'));
+      setIsMoveProductsModalVisible(false);
+      moveProductsForm.resetFields();
+      onCategoriesChange?.();
+    } catch (error) {
+      console.error('Error moving products:', error);
+      setIsMoveProductsModalVisible(false);
+      setErrorMessage(error instanceof Error ? error.message : 'Помилка переносу продуктів');
+      setIsErrorModalVisible(true);
+    }
+  };
+
   // Context menu items
   const menuItems: MenuProps['items'] = [
     {
@@ -439,6 +487,20 @@ export default function CategoryTree({ data, onCategoriesChange }: CategoryTreeP
       label: t('renameCategory'),
       disabled: !selectedNode,
       onClick: handleStartRenaming,
+    },
+    {
+      key: 'moveProducts',
+      label: t('moveProducts'),
+      disabled: !selectedNode,
+      onClick: () => {
+        if (selectedNode) {
+          moveProductsForm.setFieldsValue({
+            targetCategoryId: null,
+          });
+          setIsMoveProductsModalVisible(true);
+          setContextMenuPosition(null);
+        }
+      },
     },
   ];
 
@@ -503,15 +565,8 @@ export default function CategoryTree({ data, onCategoriesChange }: CategoryTreeP
         showLine={{ showLeafIcon: false }}
         onRightClick={handleRightClick}
         onDrop={onDrop}
+        onSelect={onSelect}
         titleRender={renderTitle}
-        onSelect={(selectedKeys) => {
-          if (selectedKeys.length > 0) {
-            const node = findNodeByKey(selectedKeys[0]);
-            if (node) {
-              setSelectedNode(node);
-            }
-          }
-        }}
       />
       
       {contextMenuPosition && (
@@ -629,6 +684,47 @@ export default function CategoryTree({ data, onCategoriesChange }: CategoryTreeP
               </button>
               <button type="submit">
                 {t('save')}
+              </button>
+            </div>
+          </Form.Item>
+        </Form>
+      </Modal>
+      
+      {/* Move Products Modal */}
+      <Modal
+        title={t('moveProductsTitle')}
+        open={isMoveProductsModalVisible}
+        onCancel={() => setIsMoveProductsModalVisible(false)}
+        footer={null}
+      >
+        <Form
+          form={moveProductsForm}
+          layout="vertical"
+          onFinish={handleMoveProducts}
+        >
+          <p>
+            {selectedNode && t('moveProductsConfirmation').replace('%s', getCategoryFullPath(selectedNode.key))}
+          </p>
+          <Form.Item
+            name="targetCategoryId"
+            label={t('targetCategory')}
+          >
+            <Select
+              options={getCategoryOptions(treeData, selectedNode?.key)}
+              placeholder={t('selectTarget')}
+            />
+          </Form.Item>
+          <Form.Item>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setIsMoveProductsModalVisible(false)}
+                style={{ marginRight: 8 }}
+              >
+                {t('cancel')}
+              </button>
+              <button type="submit">
+                {t('confirm')}
               </button>
             </div>
           </Form.Item>

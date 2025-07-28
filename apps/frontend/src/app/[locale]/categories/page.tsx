@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import CategoryTree from '../../../components/CategoryTree';
+import ProductsListboxes from '../../../components/ProductsListboxes';
 import {useTranslations} from 'next-intl';
 
 export default function CategoriesPage() {
@@ -12,6 +13,7 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
   const fetchCategories = async () => {
     try {
@@ -53,8 +55,10 @@ export default function CategoriesPage() {
       {error && <div style={{ color: 'red' }}>{error}</div>}
       <CategoryTree 
         data={categories} 
-        onCategoriesChange={fetchCategories} 
+        onCategoriesChange={fetchCategories}
+        onSelectCategory={setSelectedCategoryId}
       />
+      <ProductsListboxes selectedCategoryId={selectedCategoryId} />
     </div>
   );
 }

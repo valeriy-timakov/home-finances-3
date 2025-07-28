@@ -1,4 +1,4 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Query, UseGuards, Request, Body } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -6,9 +6,40 @@ import { AuthGuard } from '@nestjs/passport';
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
-  @Get('select-items')
   @UseGuards(AuthGuard('bearer'))
-  findSelectItems(@Req() req) {
+  @Get()
+  findAll(@Request() req) {
     return this.productsService.findSelectItems(req.user.agentId);
+  }
+
+  @UseGuards(AuthGuard('bearer'))
+  @Get('select-items')
+  findSelectItems(@Request() req) {
+    return this.productsService.findSelectItems(req.user.agentId);
+  }
+
+  @UseGuards(AuthGuard('bearer'))
+  @Get('by-category')
+  findProductsByCategory(@Request() req, @Query('categoryId') categoryId: string) {
+    return this.productsService.findProductsByCategory(req.user.agentId, Number(categoryId));
+  }
+
+  @UseGuards(AuthGuard('bearer'))
+  @Get('not-in-category')
+  findProductsNotInCategory(@Request() req, @Query('categoryId') categoryId: string) {
+    return this.productsService.findProductsNotInCategory(req.user.agentId, Number(categoryId));
+  }
+
+  @UseGuards(AuthGuard('bearer'))
+  @Post('move-category')
+  moveProductsToCategory(
+    @Request() req,
+    @Body() body: { sourceCategoryId: number; targetCategoryId: number | null }
+  ) {
+    return this.productsService.moveProductsToCategory(
+      req.user.agentId,
+      Number(body.sourceCategoryId),
+      body.targetCategoryId !== null ? Number(body.targetCategoryId) : null
+    );
   }
 }
