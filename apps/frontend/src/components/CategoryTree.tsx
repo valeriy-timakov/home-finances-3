@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { Tree, Dropdown, Modal, Form, Input, Select, message, Menu } from 'antd';
-import { MenuOutlined, ExclamationCircleOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { ExclamationCircleOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import 'antd/dist/reset.css';
 import type { DataNode, TreeProps } from 'antd/es/tree';
 import type { MenuProps } from 'antd/es/menu';
 import { useTranslations } from 'next-intl';
+import styles from './CategoryTree.module.css';
 
 interface CategoryNode {
   id: number;
@@ -41,8 +42,10 @@ export default function CategoryTree({ data, onCategoriesChange }: CategoryTreeP
   const [form] = Form.useForm();
   const [editingNodeKey, setEditingNodeKey] = useState<string | number | null>(null);
   const [editingNodeValue, setEditingNodeValue] = useState('');
+  const [expandedKeys, setExpandedKeys] = useState<(string | number)[]>([]);
   const inputRef = useRef<Input>(null);
   const nameInputRef = useRef<Input>(null);
+  const initialLoadRef = useRef(true);
 
   // Convert category data to tree format
   React.useEffect(() => {
@@ -54,7 +57,25 @@ export default function CategoryTree({ data, onCategoriesChange }: CategoryTreeP
         children: n.children ? convertToTreeData(n.children) : [],
       }));
     
-    setTreeData(convertToTreeData(data));
+    const newTreeData = convertToTreeData(data);
+    setTreeData(newTreeData);
+    
+    // Set all keys as expanded on initial load
+    if (initialLoadRef.current && newTreeData.length > 0) {
+      const getAllKeys = (nodes: TreeNodeData[]): (string | number)[] => {
+        let keys: (string | number)[] = [];
+        nodes.forEach(node => {
+          keys.push(node.key);
+          if (node.children && node.children.length > 0) {
+            keys = [...keys, ...getAllKeys(node.children)];
+          }
+        });
+        return keys;
+      };
+      
+      setExpandedKeys(getAllKeys(newTreeData));
+      initialLoadRef.current = false;
+    }
   }, [data]);
 
   // Get full path of a category
@@ -360,6 +381,11 @@ export default function CategoryTree({ data, onCategoriesChange }: CategoryTreeP
     }
   };
 
+  // Handle expand/collapse
+  const onExpand = (expandedKeysValue: React.Key[]) => {
+    setExpandedKeys(expandedKeysValue);
+  };
+
   // Context menu items
   const menuItems: MenuProps['items'] = [
     {
@@ -467,12 +493,14 @@ export default function CategoryTree({ data, onCategoriesChange }: CategoryTreeP
   };
 
   return (
-    <div onContextMenu={(e) => e.preventDefault()}>
+    <div onContextMenu={(e) => e.preventDefault()} className={styles.categoryTree}>
       <Tree
         treeData={treeData}
-        defaultExpandAll
+        expandedKeys={expandedKeys}
+        onExpand={onExpand}
         draggable
         blockNode
+        showLine={{ showLeafIcon: false }}
         onRightClick={handleRightClick}
         onDrop={onDrop}
         titleRender={renderTitle}

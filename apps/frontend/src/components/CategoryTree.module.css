@@ -1,0 +1,4 @@
+/* Hide the drag handle icon but keep drag-and-drop functionality */
+.categoryTree :global(.ant-tree-draggable-icon) {
+  display: none !important;
+}
