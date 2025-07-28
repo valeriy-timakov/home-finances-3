@@ -14,6 +14,7 @@ export default function CategoriesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [moveWithoutConfirmation, setMoveWithoutConfirmation] = useState(false);
 
   const fetchCategories = async () => {
     try {
@@ -57,8 +58,13 @@ export default function CategoriesPage() {
         data={categories} 
         onCategoriesChange={fetchCategories}
         onSelectCategory={setSelectedCategoryId}
+        moveWithoutConfirmation={moveWithoutConfirmation}
+        onMoveWithoutConfirmationChange={setMoveWithoutConfirmation}
       />
-      <ProductsListboxes selectedCategoryId={selectedCategoryId} />
+      <ProductsListboxes 
+        selectedCategoryId={selectedCategoryId} 
+        moveWithoutConfirmation={moveWithoutConfirmation}
+      />
     </div>
   );
 }

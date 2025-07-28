@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Tree, Dropdown, Modal, Form, Input, Select, message, Menu } from 'antd';
 import { ExclamationCircleOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import 'antd/dist/reset.css';
@@ -18,6 +18,8 @@ interface CategoryTreeProps {
   data: CategoryNode[];
   onCategoriesChange?: () => void;
   onSelectCategory?: (categoryId: number | null) => void;
+  moveWithoutConfirmation?: boolean;
+  onMoveWithoutConfirmationChange?: (checked: boolean) => void;
 }
 
 interface TreeNodeData extends DataNode {
@@ -28,7 +30,13 @@ interface TreeNodeData extends DataNode {
   isEditing?: boolean;
 }
 
-export default function CategoryTree({ data, onCategoriesChange, onSelectCategory }: CategoryTreeProps) {
+export default function CategoryTree({ 
+  data, 
+  onCategoriesChange, 
+  onSelectCategory,
+  moveWithoutConfirmation = false,
+  onMoveWithoutConfirmationChange
+}: CategoryTreeProps) {
   const t = useTranslations('CategoriesPage');
   const [treeData, setTreeData] = useState<TreeNodeData[]>([]);
   const [selectedNode, setSelectedNode] = useState<TreeNodeData | null>(null);
@@ -479,6 +487,161 @@ export default function CategoryTree({ data, onCategoriesChange, onSelectCategor
     }
   };
 
+  // Add state for drag-and-drop product handling
+  const [isDraggingProduct, setIsDraggingProduct] = useState(false);
+
+  useEffect(() => {
+    // Add global event listeners for product drag events
+    const handleDragEnter = (e: DragEvent) => {
+      const productData = e.dataTransfer?.types.includes('application/json');
+      if (productData) {
+        setIsDraggingProduct(true);
+      }
+    };
+
+    const handleDragLeave = (e: DragEvent) => {
+      if (e.target === document.documentElement) {
+        setIsDraggingProduct(false);
+      }
+    };
+
+    document.addEventListener('dragenter', handleDragEnter);
+    document.addEventListener('dragleave', handleDragLeave);
+    document.addEventListener('drop', () => setIsDraggingProduct(false));
+    document.addEventListener('dragend', () => setIsDraggingProduct(false));
+
+    return () => {
+      document.removeEventListener('dragenter', handleDragEnter);
+      document.removeEventListener('dragleave', handleDragLeave);
+      document.removeEventListener('drop', () => setIsDraggingProduct(false));
+      document.removeEventListener('dragend', () => setIsDraggingProduct(false));
+    };
+  }, []);
+
+  // Handle product drop on category
+  const handleProductDrop = async (info: any) => {
+    try {
+      const productData = info.event.dataTransfer.getData('application/json');
+      if (!productData) return;
+      
+      const product = JSON.parse(productData);
+      const targetCategoryId = Number(info.node.key);
+      
+      // If the product is already in this category, do nothing
+      if (product.categoryId === targetCategoryId) return;
+      
+      if (moveWithoutConfirmation) {
+        // Skip confirmation and update directly
+        await updateProductCategory(product.id, targetCategoryId);
+      } else {
+        // Show confirmation dialog
+        setProductDropInfo({
+          product,
+          targetCategoryId,
+          targetCategoryName: getCategoryNameById(targetCategoryId)
+        });
+        setIsProductDropModalVisible(true);
+      }
+    } catch (e: any) {
+      message.error(e.message || t('errorOccurred'));
+    }
+  };
+
+  // Update product category
+  const updateProductCategory = async (productId: number, categoryId: number | null) => {
+    try {
+      const response = await fetch('/api/products/update-category', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productId,
+          categoryId,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(t('errorUpdatingProduct'));
+      }
+      
+      message.success(t('productCategoryUpdated'));
+    } catch (e: any) {
+      message.error(e.message || t('errorOccurred'));
+    }
+  };
+
+  // Handle confirm product drop
+  const handleConfirmProductDrop = async () => {
+    if (!productDropInfo) return;
+    
+    await updateProductCategory(productDropInfo.product.id, productDropInfo.targetCategoryId);
+    setIsProductDropModalVisible(false);
+    setProductDropInfo(null);
+  };
+
+  // Handle cancel product drop
+  const handleCancelProductDrop = () => {
+    setIsProductDropModalVisible(false);
+    setProductDropInfo(null);
+  };
+
+  // Get confirmation message for product drop
+  const getProductDropConfirmationMessage = () => {
+    if (!productDropInfo) return '';
+    
+    const { product, targetCategoryId, targetCategoryName } = productDropInfo;
+    
+    if (product.categoryId === null) {
+      // Adding to a category
+      return t('confirmAddToCategory')
+        .replace('{productName}', product.name)
+        .replace('{categoryName}', targetCategoryName);
+    } else if (targetCategoryId === null) {
+      // Removing from a category
+      return t('confirmRemoveFromCategory')
+        .replace('{productName}', product.name)
+        .replace('{categoryName}', getCategoryNameById(product.categoryId));
+    } else {
+      // Changing category
+      return t('confirmChangeCategory')
+        .replace('{productName}', product.name)
+        .replace('{sourceCategory}', getCategoryNameById(product.categoryId))
+        .replace('{targetCategory}', targetCategoryName);
+    }
+  };
+
+  // Add state for product drop confirmation
+  const [isProductDropModalVisible, setIsProductDropModalVisible] = useState(false);
+  const [productDropInfo, setProductDropInfo] = useState<{
+    product: any;
+    targetCategoryId: number | null;
+    targetCategoryName: string;
+  } | null>(null);
+
+  // Get category name by ID
+  const getCategoryNameById = (categoryId: number | null): string => {
+    if (categoryId === null) {
+      return t('noCategory');
+    }
+    
+    const findCategoryName = (nodes: TreeNodeData[]): string => {
+      for (const node of nodes) {
+        if (Number(node.key) === categoryId) {
+          return node.title as string;
+        }
+        if (node.children) {
+          const name = findCategoryName(node.children);
+          if (name) return name;
+        }
+      }
+      return '';
+    };
+    
+    const name = findCategoryName(treeData);
+    return name || `${categoryId}`;
+  };
+
   // Context menu items
   const menuItems: MenuProps['items'] = [
     {
@@ -614,35 +777,60 @@ export default function CategoryTree({ data, onCategoriesChange, onSelectCategor
   };
 
   return (
-    <div onContextMenu={(e) => e.preventDefault()} className={styles.categoryTree}>
-      <Tree
-        treeData={treeData}
-        expandedKeys={expandedKeys}
-        onExpand={onExpand}
-        draggable
-        blockNode
-        showLine={{ showLeafIcon: false }}
-        onRightClick={handleRightClick}
-        onDrop={onDrop}
-        onSelect={onSelect}
-        titleRender={renderTitle}
-      />
-      
-      {contextMenuPosition && (
-        <div
-          style={{
-            position: 'fixed',
-            left: contextMenuPosition.x,
-            top: contextMenuPosition.y,
-            zIndex: 1000,
-            boxShadow: '0 3px 6px rgba(0,0,0,0.16)',
-            background: 'white',
-            borderRadius: '2px',
+    <div className="category-tree-container">
+      <Dropdown 
+        menu={{ items: menuItems }} 
+        trigger={['contextMenu']} 
+        open={contextMenuPosition !== null}
+        onOpenChange={(open) => {
+          if (!open) setContextMenuPosition(null);
+        }}
+      >
+        <div 
+          style={{ 
+            position: 'relative',
+            border: isDraggingProduct ? '2px dashed #1890ff' : '1px solid transparent',
+            borderRadius: '4px',
+            padding: '8px',
+            transition: 'border 0.2s'
           }}
         >
-          <Menu items={menuItems} />
+          <Tree
+            showLine
+            showIcon={false}
+            defaultExpandedKeys={expandedKeys}
+            expandedKeys={expandedKeys}
+            onExpand={onExpand}
+            treeData={treeData}
+            onSelect={onSelect}
+            onRightClick={handleRightClick}
+            draggable={!isDraggingProduct}
+            onDrop={info => {
+              if (isDraggingProduct) {
+                handleProductDrop(info);
+              } else {
+                onDrop(info);
+              }
+            }}
+            onDragOver={(e) => {
+              if (isDraggingProduct) {
+                e.preventDefault();
+              }
+            }}
+            className={isDraggingProduct ? 'product-drop-target' : ''}
+          />
+          {contextMenuPosition && (
+            <div
+              style={{
+                position: 'absolute',
+                left: contextMenuPosition.x,
+                top: contextMenuPosition.y,
+                zIndex: 1000,
+              }}
+            />
+          )}
         </div>
-      )}
+      </Dropdown>
       
       {/* Delete Confirmation Modal */}
       <Modal
@@ -850,6 +1038,19 @@ export default function CategoryTree({ data, onCategoriesChange, onSelectCategor
         )}
       </Modal>
 
+      {/* Product Drop Confirmation Modal */}
+      <Modal
+        title={t('confirm')}
+        open={isProductDropModalVisible}
+        onOk={handleConfirmProductDrop}
+        onCancel={handleCancelProductDrop}
+        okText={t('yes')}
+        cancelText={t('no')}
+        okButtonProps={{ style: { color: '#fff', background: '#1890ff' } }}
+      >
+        <p>{getProductDropConfirmationMessage()}</p>
+      </Modal>
+
       {/* Error Modal */}
       <Modal
         title="Помилка"
@@ -875,6 +1076,19 @@ export default function CategoryTree({ data, onCategoriesChange, onSelectCategor
       >
         <p>{errorMessage}</p>
       </Modal>
+      
+      {/* Move without confirmation checkbox */}
+      <div style={{ marginTop: '16px' }}>
+        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+          <input 
+            type="checkbox" 
+            checked={moveWithoutConfirmation}
+            onChange={(e) => onMoveWithoutConfirmationChange?.(e.target.checked)}
+            style={{ marginRight: '8px' }}
+          />
+          {t('moveWithoutConfirmation')}
+        </label>
+      </div>
     </div>
   );
 }

@@ -25,6 +25,15 @@
   gap: 8px;
 }
 
+.dropZone {
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.dropZone.dragOver {
+  background-color: rgba(24, 144, 255, 0.05);
+  border-color: #1890ff;
+}
+
 .productItem {
   background-color: #f0f0f0;
   border: 1px solid #d9d9d9;
@@ -34,6 +43,14 @@
   font-size: 14px;
   cursor: default;
   transition: background-color 0.3s;
+}
+
+.draggable {
+  cursor: grab;
+}
+
+.draggable:active {
+  cursor: grabbing;
 }
 
 .productItem:hover {

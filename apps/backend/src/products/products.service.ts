@@ -89,4 +89,49 @@ export class ProductsService {
 
     return { moved: productIds.length };
   }
+
+  async updateProductCategory(agentId: number, productId: number, categoryId: number | null) {
+    // Verify the product belongs to the agent
+    const product = await this.prisma.productOrService.findFirst({
+      where: {
+        id: productId,
+        agentId,
+      },
+    });
+
+    if (!product) {
+      throw new Error('Product not found or does not belong to this agent');
+    }
+
+    // If categoryId is provided, verify the category exists and belongs to the agent
+    if (categoryId !== null) {
+      const category = await this.prisma.category.findFirst({
+        where: {
+          id: categoryId,
+          agentId,
+        },
+      });
+
+      if (!category) {
+        throw new Error('Category not found or does not belong to this agent');
+      }
+    }
+
+    // Update the product's category
+    const updatedProduct = await this.prisma.productOrService.update({
+      where: {
+        id: productId,
+      },
+      data: {
+        categoryId,
+      },
+      select: {
+        id: true,
+        name: true,
+        categoryId: true,
+      },
+    });
+
+    return updatedProduct;
+  }
 }

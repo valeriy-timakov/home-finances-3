@@ -42,4 +42,17 @@ export class ProductsController {
       body.targetCategoryId !== null ? Number(body.targetCategoryId) : null
     );
   }
+
+  @UseGuards(AuthGuard('bearer'))
+  @Post('update-category')
+  updateProductCategory(
+    @Request() req,
+    @Body() body: { productId: number; categoryId: number | null }
+  ) {
+    return this.productsService.updateProductCategory(
+      req.user.agentId,
+      Number(body.productId),
+      body.categoryId !== null ? Number(body.categoryId) : null
+    );
+  }
 }
