@@ -38,6 +38,7 @@ export default function CategoryTree({ data, onCategoriesChange, onSelectCategor
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [isDragConfirmModalVisible, setIsDragConfirmModalVisible] = useState(false);
   const [isMoveProductsModalVisible, setIsMoveProductsModalVisible] = useState(false);
+  const [isMergeCategoryModalVisible, setIsMergeCategoryModalVisible] = useState(false);
   const [isErrorModalVisible, setIsErrorModalVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [dragInfo, setDragInfo] = useState<{ dragNode: any; dropNode: any; dropPosition: number } | null>(null);
@@ -434,6 +435,50 @@ export default function CategoryTree({ data, onCategoriesChange, onSelectCategor
     }
   };
 
+  // Handle merge category
+  const handleMergeCategory = async (values: { targetCategoryId: number | null }) => {
+    if (!selectedNode) return;
+    
+    try {
+      // First move all products
+      const moveResponse = await fetch(`/api/products/move-category`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sourceCategoryId: selectedNode.key,
+          targetCategoryId: values.targetCategoryId || null,
+        }),
+      });
+      
+      if (!moveResponse.ok) {
+        const errorData = await moveResponse.json();
+        throw new Error(errorData.message || 'Failed to move products');
+      }
+      
+      // Then delete the source category
+      const deleteResponse = await fetch(`/api/categories/${selectedNode.key}`, {
+        method: 'DELETE',
+      });
+      
+      if (!deleteResponse.ok) {
+        const errorData = await deleteResponse.json();
+        throw new Error(errorData.message || 'Failed to delete category');
+      }
+      
+      message.success(t('categoryMerged'));
+      setIsMergeCategoryModalVisible(false);
+      moveProductsForm.resetFields();
+      onCategoriesChange?.();
+    } catch (error) {
+      console.error('Error merging category:', error);
+      setIsMergeCategoryModalVisible(false);
+      setErrorMessage(error instanceof Error ? error.message : 'Помилка злиття категорії');
+      setIsErrorModalVisible(true);
+    }
+  };
+
   // Context menu items
   const menuItems: MenuProps['items'] = [
     {
@@ -498,6 +543,20 @@ export default function CategoryTree({ data, onCategoriesChange, onSelectCategor
             targetCategoryId: null,
           });
           setIsMoveProductsModalVisible(true);
+          setContextMenuPosition(null);
+        }
+      },
+    },
+    {
+      key: 'mergeCategory',
+      label: t('mergeCategory'),
+      disabled: !selectedNode,
+      onClick: () => {
+        if (selectedNode) {
+          moveProductsForm.setFieldsValue({
+            targetCategoryId: null,
+          });
+          setIsMergeCategoryModalVisible(true);
           setContextMenuPosition(null);
         }
       },
@@ -719,6 +778,47 @@ export default function CategoryTree({ data, onCategoriesChange, onSelectCategor
               <button
                 type="button"
                 onClick={() => setIsMoveProductsModalVisible(false)}
+                style={{ marginRight: 8 }}
+              >
+                {t('cancel')}
+              </button>
+              <button type="submit">
+                {t('confirm')}
+              </button>
+            </div>
+          </Form.Item>
+        </Form>
+      </Modal>
+      
+      {/* Merge Category Modal */}
+      <Modal
+        title={t('mergeCategoryTitle')}
+        open={isMergeCategoryModalVisible}
+        onCancel={() => setIsMergeCategoryModalVisible(false)}
+        footer={null}
+      >
+        <Form
+          form={moveProductsForm}
+          layout="vertical"
+          onFinish={handleMergeCategory}
+        >
+          <p>
+            {selectedNode && t('mergeCategoryConfirmation').replace('%s', getCategoryFullPath(selectedNode.key))}
+          </p>
+          <Form.Item
+            name="targetCategoryId"
+            label={t('targetCategory')}
+          >
+            <Select
+              options={getCategoryOptions(treeData, selectedNode?.key)}
+              placeholder={t('selectTarget')}
+            />
+          </Form.Item>
+          <Form.Item>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setIsMergeCategoryModalVisible(false)}
                 style={{ marginRight: 8 }}
               >
                 {t('cancel')}
