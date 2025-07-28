@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Spin, message, Modal } from 'antd';
+import { Spin, message } from 'antd';
 import { useTranslations } from 'next-intl';
 import styles from './ProductsListboxes.module.css';
+import ConfirmationDialog from './ConfirmationDialog';
 
 interface Product {
   id: number;
@@ -254,16 +255,15 @@ export default function ProductsListboxes({
       </div>
 
       {/* Confirmation Modal */}
-      <Modal
+      <ConfirmationDialog
         title={t('confirm')}
-        open={isConfirmationModalVisible}
-        onOk={handleConfirmMove}
+        text={getConfirmationMessage()}
+        confirmLabel={t('yes')}
+        rejectLabel={t('no')}
+        isVisible={isConfirmationModalVisible}
+        onConfirm={handleConfirmMove}
         onCancel={handleCancelMove}
-        okText={t('yes')}
-        cancelText={t('no')}
-      >
-        <p>{getConfirmationMessage()}</p>
-      </Modal>
+      />
     </div>
   );
 }

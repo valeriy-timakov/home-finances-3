@@ -1,0 +1,8 @@
+.confirmButton {
+  color: #fff !important; /* Ensure text is white */
+  background-color: #1890ff !important; /* Use Ant Design's primary blue color */
+}
+
+.confirmButton:hover {
+  background-color: #40a9ff !important; /* Lighter blue on hover */
+}

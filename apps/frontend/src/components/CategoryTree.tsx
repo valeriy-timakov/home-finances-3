@@ -6,6 +6,7 @@ import type { DataNode, TreeProps } from 'antd/es/tree';
 import type { MenuProps } from 'antd/es/menu';
 import { useTranslations } from 'next-intl';
 import styles from './CategoryTree.module.css';
+import ConfirmationDialog from './ConfirmationDialog';
 
 interface CategoryNode {
   id: number;
@@ -833,19 +834,15 @@ export default function CategoryTree({
       </Dropdown>
       
       {/* Delete Confirmation Modal */}
-      <Modal
+      <ConfirmationDialog
         title={t('confirm')}
-        open={isDeleteModalVisible}
-        onOk={handleDeleteCategory}
+        text={`${t('deleteConfirmation')} ${selectedNode ? getCategoryFullPath(selectedNode.key) : ''}?`}
+        confirmLabel={t('yes')}
+        rejectLabel={t('no')}
+        isVisible={isDeleteModalVisible}
+        onConfirm={handleDeleteCategory}
         onCancel={() => setIsDeleteModalVisible(false)}
-        okText={t('yes')}
-        cancelText={t('no')}
-        okButtonProps={{ style: { color: '#fff', background: '#1890ff' } }}
-      >
-        <p>
-          {t('deleteConfirmation')} {selectedNode && getCategoryFullPath(selectedNode.key)}?
-        </p>
-      </Modal>
+      />
       
       {/* Edit Category Modal */}
       <Modal
@@ -1020,36 +1017,28 @@ export default function CategoryTree({
       </Modal>
       
       {/* Drag and Drop Confirmation Modal */}
-      <Modal
+      <ConfirmationDialog
         title={t('confirm')}
-        open={isDragConfirmModalVisible}
-        onOk={handleConfirmDragDrop}
+        text={dragInfo ? 
+          `${t('moveConfirmation')} ${dragInfo.dragNode.title} ${t('from')} ${getParentFullPath(dragInfo.dragNode.key) || t('rootCategory')} ${t('to')} ${dragInfo.dropPosition === 0 ? dragInfo.dropNode.title : (getParentFullPath(dragInfo.dropNode.key) || t('rootCategory'))}?` 
+          : ''}
+        confirmLabel={t('yes')}
+        rejectLabel={t('no')}
+        isVisible={isDragConfirmModalVisible}
+        onConfirm={handleConfirmDragDrop}
         onCancel={() => setIsDragConfirmModalVisible(false)}
-        okText={t('yes')}
-        cancelText={t('no')}
-        okButtonProps={{ style: { color: '#fff', background: '#1890ff' } }}
-      >
-        {dragInfo && (
-          <p>
-            {t('moveConfirmation')} {dragInfo.dragNode.title}{' '}
-            {t('from')} {getParentFullPath(dragInfo.dragNode.key) || t('rootCategory')}{' '}
-            {t('to')} {dragInfo.dropPosition === 0 ? dragInfo.dropNode.title : (getParentFullPath(dragInfo.dropNode.key) || t('rootCategory'))}?
-          </p>
-        )}
-      </Modal>
+      />
 
       {/* Product Drop Confirmation Modal */}
-      <Modal
+      <ConfirmationDialog
         title={t('confirm')}
-        open={isProductDropModalVisible}
-        onOk={handleConfirmProductDrop}
+        text={getProductDropConfirmationMessage()}
+        confirmLabel={t('yes')}
+        rejectLabel={t('no')}
+        isVisible={isProductDropModalVisible}
+        onConfirm={handleConfirmProductDrop}
         onCancel={handleCancelProductDrop}
-        okText={t('yes')}
-        cancelText={t('no')}
-        okButtonProps={{ style: { color: '#fff', background: '#1890ff' } }}
-      >
-        <p>{getProductDropConfirmationMessage()}</p>
-      </Modal>
+      />
 
       {/* Error Modal */}
       <Modal
