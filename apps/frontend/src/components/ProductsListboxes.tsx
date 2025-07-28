@@ -25,6 +25,7 @@ export default function ProductsListboxes({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draggedProduct, setDraggedProduct] = useState<Product | null>(null);
+  const [categories, setCategories] = useState<any[]>([]);
   
   // State for confirmation dialog
   const [isConfirmationModalVisible, setIsConfirmationModalVisible] = useState(false);
@@ -75,6 +76,24 @@ export default function ProductsListboxes({
     fetchProducts();
   }, [fetchProducts]);
 
+  // Fetch all categories to get full paths
+  const fetchCategories = useCallback(async () => {
+    try {
+      const response = await fetch('/api/categories');
+      if (!response.ok) {
+        throw new Error(t('errorFetchingCategories'));
+      }
+      const data = await response.json();
+      setCategories(data);
+    } catch (e: any) {
+      console.error('Error fetching categories:', e);
+    }
+  }, [t]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
   const handleDragStart = (product: Product) => (e: React.DragEvent<HTMLDivElement>) => {
     setDraggedProduct(product);
     e.dataTransfer.setData('application/json', JSON.stringify(product));
@@ -86,14 +105,48 @@ export default function ProductsListboxes({
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const getCategoryName = (categoryId: number | null): string => {
+  const getCategoryFullPath = (categoryId: number | null): string => {
     if (categoryId === null) {
-      return t('noCategory');
+      return t('');
     }
     
-    // This is a simplified approach. In a real app, you might want to fetch the category name
-    // from a category service or store
-    return categoryId === selectedCategoryId ? t('currentCategory') : `${categoryId}`;
+    // Find the category by ID
+    const findCategoryById = (id: number, nodes: any[]): any => {
+      for (const node of nodes) {
+        if (node.id === id) {
+          return node;
+        }
+        if (node.children && node.children.length > 0) {
+          const found = findCategoryById(id, node.children);
+          if (found) {
+            return found;
+          }
+        }
+      }
+      return null;
+    };
+    
+    // Build the full path
+    const buildPath = (node: any, nodes: any[]): string[] => {
+      const path = [node.name];
+      
+      if (node.parentId) {
+        const parent = findCategoryById(node.parentId, nodes);
+        if (parent) {
+          return [...buildPath(parent, nodes), ...path];
+        }
+      }
+      
+      return path;
+    };
+    
+    const category = findCategoryById(categoryId, categories);
+    if (!category) {
+      return `${categoryId}`;
+    }
+    
+    const path = buildPath(category, categories);
+    return path.join(' / ');
   };
 
   const handleDrop = (targetCategoryId: number | null) => async (e: React.DragEvent<HTMLDivElement>) => {
@@ -109,9 +162,9 @@ export default function ProductsListboxes({
       productId: draggedProduct.id,
       productName: draggedProduct.name,
       sourceCategoryId: draggedProduct.categoryId,
-      sourceCategoryName: getCategoryName(draggedProduct.categoryId),
+      sourceCategoryName: getCategoryFullPath(draggedProduct.categoryId),
       targetCategoryId: targetCategoryId,
-      targetCategoryName: getCategoryName(targetCategoryId)
+      targetCategoryName: getCategoryFullPath(targetCategoryId)
     };
     
     if (moveWithoutConfirmation) {
@@ -173,17 +226,17 @@ export default function ProductsListboxes({
     
     if (confirmationData.sourceCategoryId === null) {
       // Adding to a category
-      return t('confirmAddToCategory')
+      return t.raw('confirmAddToCategory')
         .replace('{productName}', confirmationData.productName)
         .replace('{categoryName}', confirmationData.targetCategoryName || '');
     } else if (confirmationData.targetCategoryId === null) {
       // Removing from a category
-      return t('confirmRemoveFromCategory')
+      return t.raw('confirmRemoveFromCategory')
         .replace('{productName}', confirmationData.productName)
         .replace('{categoryName}', confirmationData.sourceCategoryName || '');
     } else {
       // Changing category
-      return t('confirmChangeCategory')
+      return t.raw('confirmChangeCategory')
         .replace('{productName}', confirmationData.productName)
         .replace('{sourceCategory}', confirmationData.sourceCategoryName || '')
         .replace('{targetCategory}', confirmationData.targetCategoryName || '');

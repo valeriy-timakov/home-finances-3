@@ -595,20 +595,20 @@ export default function CategoryTree({
     
     if (product.categoryId === null) {
       // Adding to a category
-      return t('confirmAddToCategory')
+      return t.raw('confirmAddToCategory')
         .replace('{productName}', product.name)
-        .replace('{categoryName}', targetCategoryName);
+        .replace('{categoryName}', getCategoryFullPathById(targetCategoryId));
     } else if (targetCategoryId === null) {
       // Removing from a category
-      return t('confirmRemoveFromCategory')
+      return t.raw('confirmRemoveFromCategory')
         .replace('{productName}', product.name)
-        .replace('{categoryName}', getCategoryNameById(product.categoryId));
+        .replace('{categoryName}', getCategoryFullPathById(product.categoryId));
     } else {
       // Changing category
-      return t('confirmChangeCategory')
+      return t.raw('confirmChangeCategory')
         .replace('{productName}', product.name)
-        .replace('{sourceCategory}', getCategoryNameById(product.categoryId))
-        .replace('{targetCategory}', targetCategoryName);
+        .replace('{sourceCategory}', getCategoryFullPathById(product.categoryId))
+        .replace('{targetCategory}', getCategoryFullPathById(targetCategoryId));
     }
   };
 
@@ -641,6 +641,35 @@ export default function CategoryTree({
     
     const name = findCategoryName(treeData);
     return name || `${categoryId}`;
+  };
+
+  // Get full path of a category by its ID
+  const getCategoryFullPathById = (categoryId: number | null): string => {
+    if (categoryId === null) {
+      return t('noCategory');
+    }
+    
+    const path: string[] = [];
+    
+    const findPath = (nodes: TreeNodeData[], parentPath: string[] = []): boolean => {
+      for (const node of nodes) {
+        const currentPath = [...parentPath, node.title as string];
+        
+        if (Number(node.key) === categoryId) {
+          path.push(...currentPath);
+          return true;
+        }
+        
+        if (node.children && findPath(node.children, currentPath)) {
+          return true;
+        }
+      }
+      return false;
+    };
+    
+    findPath(treeData);
+    
+    return path.length > 0 ? path.join(' / ') : `${categoryId}`;
   };
 
   // Context menu items
@@ -774,7 +803,10 @@ export default function CategoryTree({
         </div>
       );
     }
-    return <span>{node.title}</span>;
+    return <span onDoubleClick={() => {
+      setSelectedNode(node);
+      handleStartRenaming();
+    }}>{node.title}</span>;
   };
 
   return (
@@ -806,6 +838,7 @@ export default function CategoryTree({
             onSelect={onSelect}
             onRightClick={handleRightClick}
             draggable={!isDraggingProduct}
+            titleRender={renderTitle}
             onDrop={info => {
               if (isDraggingProduct) {
                 handleProductDrop(info);
