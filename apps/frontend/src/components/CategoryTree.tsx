@@ -1,34 +1,28 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Tree, Dropdown, Modal, Form, Input, Select, message, Menu } from 'antd';
-import { ExclamationCircleOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { Tree, Dropdown, Modal, Form, Input, Select, message, Menu, Checkbox } from 'antd';
+import { ExclamationCircleOutlined, CheckOutlined, CloseOutlined, DownOutlined } from '@ant-design/icons';
 import 'antd/dist/reset.css';
 import type { DataNode, TreeProps } from 'antd/es/tree';
 import type { MenuProps } from 'antd/es/menu';
 import { useTranslations } from 'next-intl';
 import styles from './CategoryTree.module.css';
 import ConfirmationDialog from './ConfirmationDialog';
+import { Category } from '../types/Category';
 
-interface CategoryNode {
-  id: number;
-  name: string;
-  superCategoryId?: number;
-  children?: CategoryNode[];
+interface TreeNodeData {
+  key: React.Key;
+  title: React.ReactNode;
+  children?: TreeNodeData[];
+  id?: number;
+  parentId?: number | null;
 }
 
 interface CategoryTreeProps {
-  data: CategoryNode[];
+  data: any[]; // Backend data format
   onCategoriesChange?: () => void;
-  onSelectCategory?: (categoryId: number | null) => void;
+  onSelectCategory?: (category: Category | null) => void;
   moveWithoutConfirmation?: boolean;
   onMoveWithoutConfirmationChange?: (checked: boolean) => void;
-}
-
-interface TreeNodeData extends DataNode {
-  title: string;
-  key: string | number;
-  children?: TreeNodeData[];
-  parentId?: number | null;
-  isEditing?: boolean;
 }
 
 export default function CategoryTree({ 
@@ -62,7 +56,7 @@ export default function CategoryTree({
 
   // Convert category data to tree format
   React.useEffect(() => {
-    const convertToTreeData = (nodes: CategoryNode[]): TreeNodeData[] =>
+    const convertToTreeData = (nodes: any[]): TreeNodeData[] =>
       nodes.map((n) => ({
         title: n.name,
         key: n.id,
@@ -95,7 +89,7 @@ export default function CategoryTree({
   const getCategoryFullPath = (nodeKey: string | number, nodes: TreeNodeData[] = treeData): string => {
     for (const node of nodes) {
       if (node.key === nodeKey) {
-        return node.title;
+        return node.title as string;
       }
       if (node.children) {
         const path = getCategoryFullPath(nodeKey, node.children);
@@ -113,7 +107,7 @@ export default function CategoryTree({
       if (node.children) {
         for (const child of node.children) {
           if (child.key === nodeKey) {
-            return node.title;
+            return node.title as string;
           }
         }
         const path = getParentFullPath(nodeKey, node.children);
@@ -404,7 +398,55 @@ export default function CategoryTree({
     if (selectedKeys.length > 0) {
       const selectedKey = selectedKeys[0];
       setSelectedNode(findNodeByKey(selectedKey));
-      onSelectCategory?.(Number(selectedKey));
+      
+      // Create a Category DTO with full path information
+      const selectedId = Number(selectedKey);
+      const selectedCategory = data.find(category => category.id === selectedId);
+      
+      if (selectedCategory) {
+        // Build the path array of parent categories
+        const pathCategories: Category[] = [];
+        
+        // Function to find all parent categories
+        const findParentCategories = (categoryId: number, categories: any[]): boolean => {
+          for (const category of categories) {
+            if (category.id === categoryId) {
+              return true;
+            }
+            
+            if (category.children && category.children.length > 0) {
+              const isParent = findParentCategories(categoryId, category.children);
+              if (isParent) {
+                // Add this category to the path
+                const pathCategory: Category = {
+                  id: category.id,
+                  name: category.name,
+                  path: [] // Path will be populated later
+                };
+                pathCategories.unshift(pathCategory);
+                return true;
+              }
+            }
+          }
+          return false;
+        };
+        
+        // Find the selected category's parent path
+        if (selectedCategory.parentId) {
+          findParentCategories(selectedCategory.parentId, data);
+        }
+        
+        // Create the full Category DTO
+        const categoryDTO: Category = {
+          id: selectedCategory.id,
+          name: selectedCategory.name,
+          path: pathCategories
+        };
+        
+        onSelectCategory?.(categoryDTO);
+      } else {
+        onSelectCategory?.(null);
+      }
     } else {
       setSelectedNode(null);
       onSelectCategory?.(null);
@@ -597,18 +639,18 @@ export default function CategoryTree({
       // Adding to a category
       return t.raw('confirmAddToCategory')
         .replace('{productName}', product.name)
-        .replace('{categoryName}', getCategoryFullPathById(targetCategoryId));
+        .replace('{categoryName}', targetCategoryName);
     } else if (targetCategoryId === null) {
       // Removing from a category
       return t.raw('confirmRemoveFromCategory')
         .replace('{productName}', product.name)
-        .replace('{categoryName}', getCategoryFullPathById(product.categoryId));
+        .replace('{categoryName}', getCategoryNameById(product.categoryId));
     } else {
       // Changing category
       return t.raw('confirmChangeCategory')
         .replace('{productName}', product.name)
-        .replace('{sourceCategory}', getCategoryFullPathById(product.categoryId))
-        .replace('{targetCategory}', getCategoryFullPathById(targetCategoryId));
+        .replace('{sourceCategory}', getCategoryNameById(product.categoryId))
+        .replace('{targetCategory}', targetCategoryName);
     }
   };
 

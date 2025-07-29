@@ -3,6 +3,7 @@ import { Spin, message } from 'antd';
 import { useTranslations } from 'next-intl';
 import styles from './ProductsListboxes.module.css';
 import ConfirmationDialog from './ConfirmationDialog';
+import { Category } from '../types/Category';
 
 interface Product {
   id: number;
@@ -11,12 +12,12 @@ interface Product {
 }
 
 interface ProductsListboxesProps {
-  selectedCategoryId: number | null;
+  selectedCategory: Category | null;
   moveWithoutConfirmation?: boolean;
 }
 
 export default function ProductsListboxes({ 
-  selectedCategoryId, 
+  selectedCategory, 
   moveWithoutConfirmation = false 
 }: ProductsListboxesProps) {
   const t = useTranslations('CategoriesPage');
@@ -25,7 +26,7 @@ export default function ProductsListboxes({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draggedProduct, setDraggedProduct] = useState<Product | null>(null);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   
   // State for confirmation dialog
   const [isConfirmationModalVisible, setIsConfirmationModalVisible] = useState(false);
@@ -39,7 +40,7 @@ export default function ProductsListboxes({
   } | null>(null);
 
   const fetchProducts = useCallback(async () => {
-    if (selectedCategoryId === null) {
+    if (!selectedCategory) {
       setProductsInCategory([]);
       setProductsNotInCategory([]);
       return;
@@ -50,14 +51,14 @@ export default function ProductsListboxes({
     
     try {
       // Fetch products in the selected category
-      const inCategoryResponse = await fetch(`/api/products/by-category?categoryId=${selectedCategoryId}`);
+      const inCategoryResponse = await fetch(`/api/products/by-category?categoryId=${selectedCategory.id}`);
       if (!inCategoryResponse.ok) {
         throw new Error(t('errorFetchingProducts'));
       }
       const inCategoryData = await inCategoryResponse.json();
       
       // Fetch products not in the selected category
-      const notInCategoryResponse = await fetch(`/api/products/not-in-category?categoryId=${selectedCategoryId}`);
+      const notInCategoryResponse = await fetch(`/api/products/not-in-category?categoryId=${selectedCategory.id}`);
       if (!notInCategoryResponse.ok) {
         throw new Error(t('errorFetchingProducts'));
       }
@@ -70,7 +71,7 @@ export default function ProductsListboxes({
     } finally {
       setLoading(false);
     }
-  }, [selectedCategoryId, t]);
+  }, [selectedCategory, t]);
 
   useEffect(() => {
     fetchProducts();
@@ -105,66 +106,49 @@ export default function ProductsListboxes({
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const getCategoryFullPath = (categoryId: number | null): string => {
-    if (categoryId === null) {
-      return t('');
-    }
-    
-    // Find the category by ID
-    const findCategoryById = (id: number, nodes: any[]): any => {
-      for (const node of nodes) {
-        if (node.id === id) {
-          return node;
-        }
-        if (node.children && node.children.length > 0) {
-          const found = findCategoryById(id, node.children);
-          if (found) {
-            return found;
-          }
-        }
-      }
-      return null;
-    };
-    
-    // Build the full path
-    const buildPath = (node: any, nodes: any[]): string[] => {
-      const path = [node.name];
-      
-      if (node.parentId) {
-        const parent = findCategoryById(node.parentId, nodes);
-        if (parent) {
-          return [...buildPath(parent, nodes), ...path];
-        }
-      }
-      
-      return path;
-    };
-    
-    const category = findCategoryById(categoryId, categories);
-    if (!category) {
-      return `${categoryId}`;
-    }
-    
-    const path = buildPath(category, categories);
-    return path.join(' / ');
-  };
-
-  const handleDrop = (targetCategoryId: number | null) => async (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (targetCategory: Category | null) => async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     
     if (!draggedProduct) return;
     
     // If the product is already in the target category, do nothing
-    if (draggedProduct.categoryId === targetCategoryId) return;
+    if (draggedProduct.categoryId === targetCategory?.id) return;
+
+    // Get full path string for the target category
+    let targetCategoryName = '';
+    if (targetCategory) {
+      // Build full path from path array and category name
+      const pathNames = targetCategory.path.map(cat => cat.name);
+      targetCategoryName = [...pathNames, targetCategory.name].join(' / ');
+    } else {
+      targetCategoryName = t('noCategory');
+    }
+
+    // Get source category information
+    let sourceCategoryName = '';
+    if (draggedProduct.categoryId === null) {
+      sourceCategoryName = t('noCategory');
+    } else {
+      // Find the source category in the categories list
+      const sourceCategory = categories.find(cat => cat.id === draggedProduct.categoryId);
+      if (sourceCategory) {
+        // Build full path from source category
+        const pathNames = sourceCategory.path.map(cat => cat.name);
+        sourceCategoryName = [...pathNames, sourceCategory.name].join(' / ');
+      } else {
+        // Fallback if category not found
+        sourceCategoryName = `${draggedProduct.categoryId}`;
+      }
+    }
     
     // Prepare confirmation data
     const confirmData = {
       productId: draggedProduct.id,
       productName: draggedProduct.name,
       sourceCategoryId: draggedProduct.categoryId,
-      sourceCategoryName: getCategoryFullPath(draggedProduct.categoryId),
-      targetCategoryId: targetCategoryId,
-      targetCategoryName: getCategoryFullPath(targetCategoryId)
+      sourceCategoryName: sourceCategoryName,
+      targetCategoryId: targetCategory?.id || null,
+      targetCategoryName: targetCategoryName,
     };
     
     if (moveWithoutConfirmation) {
@@ -258,8 +242,8 @@ export default function ProductsListboxes({
         <div 
           className={`${styles.listbox} ${styles.dropZone}`}
           onDragOver={handleDragOver}
-          onDrop={handleDrop(selectedCategoryId)}
-          data-category-id={selectedCategoryId}
+          onDrop={handleDrop(selectedCategory)}
+          data-category-id={selectedCategory?.id}
         >
           {productsInCategory.length === 0 ? (
             <p className={styles.emptyMessage}>{t('noProductsInCategory')}</p>

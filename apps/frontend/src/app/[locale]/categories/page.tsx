@@ -6,14 +6,15 @@ import { redirect } from 'next/navigation';
 import CategoryTree from '../../../components/CategoryTree';
 import ProductsListboxes from '../../../components/ProductsListboxes';
 import {useTranslations} from 'next-intl';
+import { Category } from '../../../types/Category';
 
 export default function CategoriesPage() {
   const t = useTranslations('CategoriesPage');
   const { data: session, status } = useSession();
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [moveWithoutConfirmation, setMoveWithoutConfirmation] = useState(false);
 
   const fetchCategories = async () => {
@@ -57,12 +58,12 @@ export default function CategoriesPage() {
       <CategoryTree 
         data={categories} 
         onCategoriesChange={fetchCategories}
-        onSelectCategory={setSelectedCategoryId}
+        onSelectCategory={setSelectedCategory}
         moveWithoutConfirmation={moveWithoutConfirmation}
         onMoveWithoutConfirmationChange={setMoveWithoutConfirmation}
       />
       <ProductsListboxes 
-        selectedCategoryId={selectedCategoryId} 
+        selectedCategory={selectedCategory} 
         moveWithoutConfirmation={moveWithoutConfirmation}
       />
     </div>
