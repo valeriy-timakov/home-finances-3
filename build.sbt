@@ -58,5 +58,12 @@ lazy val frontend = (project in file("scala-frontend"))
     
     // Development server settings
     fastOptJS / crossTarget := baseDirectory.value / "target" / "dev",
-    fullOptJS / crossTarget := baseDirectory.value / "target" / "prod"
+    fullOptJS / crossTarget := baseDirectory.value / "target" / "prod",
+    
+    // Enhanced debugging support
+    fastOptJS / scalaJSLinkerConfig ~= {
+      _.withSourceMap(true)
+       .withOptimizer(false)
+       .withSourceMapURI(uri => Some(uri.toString))
+    }
   )

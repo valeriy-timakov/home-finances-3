@@ -43,6 +43,14 @@ object Main extends App with LazyLogging {
           complete(StatusCodes.NotFound -> "JavaScript file not found. Run 'sbt frontend/fastOptJS' first.")
         }
       } ~
+      path("scala-frontend-fastopt" / "main.js.map") {
+        val mapFile = new File("scala-frontend/target/scala-2.13/home-accounting-frontend-fastopt/main.js.map")
+        if (mapFile.exists()) {
+          getFromFile(mapFile)
+        } else {
+          complete(StatusCodes.NotFound -> "Source map file not found.")
+        }
+      } ~
       getFromResourceDirectory("static")
     } ~
     pathSingleSlash {
@@ -72,6 +80,7 @@ object Main extends App with LazyLogging {
 
 
   println(s"Server now online. Please navigate to http://localhost:8080/api/hello\nPress RETURN to stop...")
-  StdIn.readLine()
-  terminate()
+  
+  // Keep the server running
+  scala.concurrent.Await.result(system.whenTerminated, scala.concurrent.duration.Duration.Inf)
 }
