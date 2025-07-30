@@ -1,5 +1,8 @@
+import org.scalajs.linker.interface.ModuleKind
+import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport.scalaJSLinkerConfig
+
 ThisBuild / version := "0.1.0-SNAPSHOT"
-ThisBuild / scalaVersion := "2.13.12"
+ThisBuild / scalaVersion := "3.3.1"
 
 lazy val commonSettings = Seq(
   organization := "com.homeaccounting",
@@ -39,31 +42,29 @@ lazy val backend = (project in file("scala-backend"))
   )
 
 lazy val frontend = (project in file("scala-frontend"))
-  .enablePlugins(ScalaJSPlugin)
+  .enablePlugins(ScalaJSBundlerPlugin)
   .settings(
     commonSettings,
     name := "home-accounting-frontend",
-    
+
     // ScalaJS settings
     scalaJSUseMainModuleInitializer := true,
-    
+    scalaJSLinkerConfig ~= {
+      // ScalaJSBundlerPlugin requires CommonJS modules
+      _.withModuleKind(ModuleKind.CommonJSModule)
+    },
+
     libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scalajs-dom" % "2.4.0",
-      "com.github.japgolly.scalajs-react" %%% "core" % "2.1.1",
-      "com.github.japgolly.scalajs-react" %%% "extra" % "2.1.1",
-      
+      "org.scala-js" %%% "scalajs-dom" % "2.8.0",
+      "com.github.japgolly.scalajs-react" %%% "core" % "2.1.2",
+      "com.github.japgolly.scalajs-react" %%% "extra" % "2.1.2",
+
       // Test dependencies
       "org.scalatest" %%% "scalatest" % "3.2.17" % Test
     ),
-    
-    // Development server settings
-    fastOptJS / crossTarget := baseDirectory.value / "target" / "dev",
-    fullOptJS / crossTarget := baseDirectory.value / "target" / "prod",
-    
-    // Enhanced debugging support
-    fastOptJS / scalaJSLinkerConfig ~= {
-      _.withSourceMap(true)
-       .withOptimizer(false)
-       .withSourceMapURI(uri => Some(uri.toString))
-    }
+
+    Compile / npmDependencies ++= Seq(
+      "react"      -> "^18.3.0",
+      "react-dom"  -> "^18.3.0"
+    )
   )

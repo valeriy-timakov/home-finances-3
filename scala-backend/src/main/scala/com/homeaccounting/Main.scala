@@ -6,6 +6,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import com.homeaccounting.api.CategoriesRoutes
 import com.typesafe.scalalogging.LazyLogging
 
 import java.io.File
@@ -18,46 +19,35 @@ object Main extends App with LazyLogging {
   implicit val system: ActorSystem[Nothing] = ActorSystem(Behaviors.empty, "home-accounting-system")
   implicit val executionContext: ExecutionContextExecutor = system.executionContext
 
-  val routes: Route = 
-    pathPrefix("api") {
-      concat(
-        path("health") {
-          get {
-            complete("OK")
-          }
-        },
-        path("hello") {
-          get {
-            complete("Hello from Akka HTTP!")
-          }
+  val apiRoutes: Route = pathPrefix("api") {
+    concat(
+      path("health") {
+        get {
+          complete("OK")
         }
-      )
-    } ~
-    pathPrefix("static") {
-      // Serve compiled ScalaJS files
-      path("scala-frontend-fastopt" / "main.js") {
-        val jsFile = new File("scala-frontend/target/scala-2.13/home-accounting-frontend-fastopt/main.js")
-        if (jsFile.exists()) {
-          getFromFile(jsFile)
-        } else {
-          complete(StatusCodes.NotFound -> "JavaScript file not found. Run 'sbt frontend/fastOptJS' first.")
+      },
+      path("hello") {
+        get {
+          complete("Hello from Akka HTTP!")
         }
-      } ~
-      path("scala-frontend-fastopt" / "main.js.map") {
-        val mapFile = new File("scala-frontend/target/scala-2.13/home-accounting-frontend-fastopt/main.js.map")
-        if (mapFile.exists()) {
-          getFromFile(mapFile)
-        } else {
-          complete(StatusCodes.NotFound -> "Source map file not found.")
-        }
-      } ~
-      getFromResourceDirectory("static")
-    } ~
+      },
+      new CategoriesRoutes().routes
+    )
+  }
+
+  val staticFilesRoutes: Route = pathPrefix("static") {
+    getFromDirectory("scala-frontend/target/scala-3.3.1")
+  }
+
+  val frontendRoutes: Route = {
     pathSingleSlash {
       getFromResource("index.html")
-    } ~
-    // Fallback to serve index.html for SPA routing
-    getFromResource("index.html")
+    } ~ get {
+      getFromResource("index.html")
+    }
+  }
+
+  val routes: Route = apiRoutes ~ staticFilesRoutes ~ frontendRoutes
 
   val bindingFuture = Http().newServerAt("localhost", 8080).bind(routes)
 

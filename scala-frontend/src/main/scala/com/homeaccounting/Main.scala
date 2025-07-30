@@ -46,6 +46,9 @@ object Main {
     .build
 
   def main(args: Array[String]): Unit = {
+    println("🚀 Scala.js Main.main() called - initializing application...")
+    dom.console.log("🚀 Scala.js Main.main() called - initializing application...")
+    
     val container = Option(dom.document.getElementById("root")).getOrElse {
       val div = dom.document.createElement("div")
       div.id = "root"
@@ -54,5 +57,8 @@ object Main {
     }
 
     App().renderIntoDOM(container)
+    
+    println("✅ Scala.js application initialized successfully")
+    dom.console.log("✅ Scala.js application initialized successfully")
   }
 }
