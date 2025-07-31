@@ -6,3 +6,5 @@
 /project/project/target/
 /scala-frontend/target/
 /scala-backend/target/
+/web-vite/target/
+/scala-frontend/esbuild/node_modules/

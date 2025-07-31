@@ -1,0 +1,14 @@
+{
+  "name": "home-accounting-frontend",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "home-accounting-monorepo": "file:..",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.23.1",
+    "parse5": "^7.2.0"
+  }
+}

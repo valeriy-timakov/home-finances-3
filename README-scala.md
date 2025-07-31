@@ -40,14 +40,14 @@ A modern home accounting application built with Scala, featuring:
    ```
    The server will start on `http://localhost:8080`
 
-3. **Compile the frontend (in another terminal):**
+3. **Start frontend dev server (hot-reload, port 3000):**
    ```bash
-   sbt "frontend/fastOptJS"
+   sbt "~esbuildServe"
    ```
 
-4. **For development with auto-recompilation:**
+4. **Build production bundle:**
    ```bash
-   sbt "~frontend/fastOptJS"
+   sbt "fullLinkJS/esbuildBundle"
    ```
 
 ### API Endpoints
@@ -83,9 +83,9 @@ The frontend JavaScript files are automatically served by the backend server fro
 
 ## Features
 
-- ✅ Type-safe full-stack development
-- ✅ Reactive UI components
-- ✅ Modern responsive design
-- ✅ Hot reload development workflow
-- ✅ RESTful API architecture
-- ✅ Comprehensive logging
+- Type-safe full-stack development
+- Reactive UI components
+- Modern responsive design
+- Hot reload development workflow
+- RESTful API architecture
+- Comprehensive logging
