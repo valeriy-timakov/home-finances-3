@@ -1,54 +1,75 @@
 package com.homeaccounting
 
-import com.homeaccounting.components.{AppHeader, FeatureCard}
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
+import scala.language.implicitConversions
+import japgolly.scalajs.react.extra.router._
 import org.scalajs.dom
 
 object Main {
-  
-  // Main App component
-  val App = ScalaComponent.builder[Unit]("App")
-    .render(_ =>
-      <.div(^.className := "app",
-        AppHeader("Home Accounting - Scala Edition", "Welcome to the Scala-based home accounting application!"),
-        <.main(^.className := "app-main",
-          FeatureCard("Features", List(
-            "Akka HTTP Backend",
-            "ScalaJS Frontend", 
-            "React Components",
-            "Modern UI",
-            "Type-safe Development"
-          )),
-          <.div(^.className := "card",
-            <.h2("API Status"),
-            <.p("Test the connection to the backend API:"),
-            <.button(
-              ^.onClick --> Callback {
-                // Simple API call example
-                dom.window.fetch("/api/health")
-                  .toFuture
-                  .foreach { response =>
-                    println(s"API Health Check: ${response.status}")
-                    if (response.ok) {
-                      dom.window.alert("✅ Backend API is running!")
-                    } else {
-                      dom.window.alert("❌ Backend API is not responding")
-                    }
-                  }(scala.concurrent.ExecutionContext.global)
-              },
-              "Check API Health"
-            )
-          )
+
+  // ------------- ROUTE DEFINITIONS -------------------------------------------------
+  sealed trait AppPage
+  case object AccountsPage extends AppPage
+  case object CategoriesPage extends AppPage
+  case object ProductsPage extends AppPage
+  case object TransactionsPage extends AppPage
+  case object TransactionsDetailsPage extends AppPage
+
+  // ------------- PAGE COMPONENTS ---------------------------------------------------
+  private val AccountsComponent             = ScalaComponent.static("Accounts")(<.div(<.h1("Рахунки")))
+  private val CategoriesComponent           = ScalaComponent.static("Categories")(<.div(<.h1("Категорії")))
+  private val ProductsComponent             = ScalaComponent.static("Products")(<.div(<.h1("Продукти")))
+  private val TransactionsComponent         = ScalaComponent.static("Transactions")(<.div(<.h1("Транзакції")))
+  private val TransactionsDetailsComponent  = ScalaComponent.static("TransactionsDetails")(<.div(<.h1("Деталі транзакцій")))
+
+  // ------------- NAVIGATION BAR ----------------------------------------------------
+  private val NavBar = ScalaComponent.builder[RouterCtl[AppPage]]("NavBar")
+    .render_P { ctl =>
+      <.nav(^.className := "navbar",
+        <.ul(^.className := "nav-list",
+          <.li(ctl.link(AccountsPage)(^.className := "nav-item", "Рахунки")),
+          <.li(ctl.link(CategoriesPage)(^.className := "nav-item", "Категорії")),
+          <.li(ctl.link(ProductsPage)(^.className := "nav-item", "Продукти")),
+          <.li(ctl.link(TransactionsPage)(^.className := "nav-item", "Транзакції")),
+          <.li(ctl.link(TransactionsDetailsPage)(^.className := "nav-item", "Деталі транзакцій"))
         )
       )
-    )
+    }
     .build
 
+  // Helper method to wrap pages with the NavBar
+  private def layout(component: VdomElement) = ScalaComponent.builder[RouterCtl[AppPage]]("Layout")
+    .render_P { ctl =>
+      <.div(
+        NavBar(ctl),
+        <.div(^.className := "page-container", component)
+      )
+    }
+    .build
+
+  // ------------- ROUTER CONFIG -----------------------------------------------------
+  private val config = RouterConfigDsl[AppPage].buildConfig { dsl =>
+    import dsl._
+
+    (
+      staticRoute(root, AccountsPage)            ~> renderR(ctl => layout(AccountsComponent())(ctl)) |
+      staticRoute("accounts", AccountsPage)     ~> renderR(ctl => layout(AccountsComponent())(ctl)) |
+      staticRoute("categories", CategoriesPage) ~> renderR(ctl => layout(CategoriesComponent())(ctl)) |
+      staticRoute("products", ProductsPage)     ~> renderR(ctl => layout(ProductsComponent())(ctl)) |
+      staticRoute("transactions", TransactionsPage) ~> renderR(ctl => layout(TransactionsComponent())(ctl)) |
+      staticRoute("transactions-details", TransactionsDetailsPage) ~> renderR(ctl => layout(TransactionsDetailsComponent())(ctl))
+    )
+        .notFound(redirectToPage(AccountsPage)(SetRouteVia.HistoryReplace)) // 404 → Home
+  }
+
+  private val baseUrl = BaseUrl.fromWindowOrigin_/
+
+  // ------------- APPLICATION ROOT COMPONENT ---------------------------------------
+  private val AppRouter = Router(baseUrl, config)
+
   def main(args: Array[String]): Unit = {
-    println("🚀 Scala.js Main.main() called - initializing application...")
-    dom.console.log("🚀 Scala.js Main.main() called - initializing application...")
-    
+    // Mount application into #root (create if absent)
     val container = Option(dom.document.getElementById("root")).getOrElse {
       val div = dom.document.createElement("div")
       div.id = "root"
@@ -56,9 +77,6 @@ object Main {
       div
     }
 
-    App().renderIntoDOM(container)
-    
-    println("✅ Scala.js application initialized successfully")
-    dom.console.log("✅ Scala.js application initialized successfully")
+    AppRouter().renderIntoDOM(container)
   }
 }

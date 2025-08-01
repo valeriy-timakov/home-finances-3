@@ -31,6 +31,12 @@ lazy val backend = (project in file("scala-backend"))
       "ch.qos.logback" % "logback-classic" % "1.4.11",
       "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
       
+      // ScalikeJDBC dependencies
+      "org.scalikejdbc" %% "scalikejdbc" % "4.2.1",
+      "org.scalikejdbc" %% "scalikejdbc-config" % "4.2.1",
+      "org.postgresql" % "postgresql" % "42.7.2",
+      "com.h2database" % "h2" % "2.2.224" % Test,
+      
       // Test dependencies
       "com.typesafe.akka" %% "akka-http-testkit" % "10.5.3" % Test,
       "com.typesafe.akka" %% "akka-actor-testkit-typed" % "2.8.5" % Test,
@@ -50,7 +56,9 @@ lazy val frontend = (project in file("scala-frontend"))
     // esbuild dev server port
     esbuildServe / serverPort := 3000,
 
-      Compile / fastLinkJS / esbuildBundleScript += "--log-level=debug",
+      // Removed invalid modification to esbuildBundleScript which produced a syntax error during bundling
+      // If you want to change the log level, pass the flag through esbuildBundleArgs instead, e.g.:
+      // Compile / fastLinkJS / esbuildBundleArgs += "--log-level=debug",
       Compile / unmanagedResourceDirectories := Seq(baseDirectory.value / "esbuild"),
 
           libraryDependencies ++= Seq(
@@ -70,5 +78,14 @@ lazy val webVite = (project in file("web-vite"))
     .settings(
         scalaJSUseMainModuleInitializer := true,
         // ES-модуль обов’язковий для vite-plugin-scalajs
-        scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.ESModule) }
+        scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.ESModule) },
+
+        libraryDependencies ++= Seq(
+            "org.scala-js" %%% "scalajs-dom" % "2.8.0",
+            "com.github.japgolly.scalajs-react" %%% "core" % "2.1.2",
+            "com.github.japgolly.scalajs-react" %%% "extra" % "2.1.2",
+
+            // Test dependencies
+            "org.scalatest" %%% "scalatest" % "3.2.17" % Test
+        )
     )
